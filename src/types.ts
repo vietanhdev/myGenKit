@@ -31,6 +31,7 @@ export type ClientContentLog = {
 export type Conversation = {
   id: string;
   title: string;
+  systemPrompt?: string; // Custom system prompt for this conversation
   createdAt: Date;
   lastModified: Date;
   messages: StreamingLog[];
@@ -39,6 +40,7 @@ export type Conversation = {
 export type ConversationSummary = {
   id: string;
   title: string;
+  systemPrompt?: string; // Custom system prompt for this conversation
   createdAt: Date;
   lastModified: Date;
   messageCount: number;

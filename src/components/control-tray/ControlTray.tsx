@@ -9,8 +9,6 @@ import { AudioRecorder } from "../../lib/audio-recorder";
 import AudioPulse from "../audio-pulse/AudioPulse";
 import "./control-tray.scss";
 import { UserSettingsButton } from "../settings-dialog/UserSettingsButton";
-import { ConnectionTroubleshooting } from "../troubleshooting/ConnectionTroubleshooting";
-import { useDisclosure } from "@heroui/react";
 
 export type ControlTrayProps = {
   videoRef: RefObject<HTMLVideoElement>;
@@ -67,7 +65,6 @@ function ControlTray({
 
   const { client, connected, connect, disconnect, volume } =
     useLiveAPIContext();
-  const { isOpen: isTroubleshootingOpen, onOpen: onTroubleshootingOpen, onClose: onTroubleshootingClose } = useDisclosure();
 
   useEffect(() => {
     if (!connected && connectButtonRef.current) {
@@ -206,35 +203,9 @@ function ControlTray({
       </div>
       
       <div className="flex items-center gap-2">
-        {/* Troubleshooting Button - show when disconnected */}
-        {!connected && (
-          <button
-            className="action-button"
-            onClick={onTroubleshootingOpen}
-            title="Connection Troubleshooting"
-          >
-            <span className="material-symbols-outlined">help</span>
-          </button>
-        )}
-        
         {enableEditingSettings ? <UserSettingsButton /> : ""}
       </div>
       
-      {/* Troubleshooting Modal */}
-      {isTroubleshootingOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="relative">
-            <button
-              className="absolute -top-2 -right-2 z-10 bg-background rounded-full p-1 shadow-lg"
-              onClick={onTroubleshootingClose}
-              title="Close"
-            >
-              <span className="material-symbols-outlined text-lg">close</span>
-            </button>
-            <ConnectionTroubleshooting />
-          </div>
-        </div>
-      )}
     </section>
   );
 }

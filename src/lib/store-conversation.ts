@@ -8,7 +8,8 @@ import {
   addMessageToConversation, 
   getCurrentConversationId, 
   setCurrentConversationId, 
-  clearCurrentConversation 
+  clearCurrentConversation,
+  updateConversationDetails 
 } from "./conversation-management";
 
 interface ConversationStore {
@@ -28,9 +29,10 @@ interface ConversationStore {
   clearStore: () => void;
   loadConversations: () => Promise<void>;
   loadCurrentConversation: (conversationId: string) => Promise<void>;
-  createNewConversation: () => Promise<void>;
+  createNewConversation: (systemPrompt?: string) => Promise<void>;
   switchConversation: (conversationId: string) => Promise<void>;
   deleteConversation: (conversationId: string) => Promise<void>;
+  updateConversationDetails: (conversationId: string, title?: string, systemPrompt?: string) => Promise<void>;
   addMessageToCurrentConversation: (message: StreamingLog) => Promise<void>;
   getCurrentConversationMessages: () => StreamingLog[];
   setError: (error: string | null) => void;
@@ -127,7 +129,7 @@ export const useConversationStore = create<ConversationStore>((set, get) => ({
   },
   
   // Create new conversation
-  createNewConversation: async () => {
+  createNewConversation: async (systemPrompt?: string) => {
     const { userId, userPassword } = get();
     
     if (!userId || !userPassword) {
@@ -137,7 +139,7 @@ export const useConversationStore = create<ConversationStore>((set, get) => ({
     
     try {
       set({ isLoading: true, error: null });
-      const newConversation = createConversation(userId, userPassword);
+      const newConversation = createConversation(userId, userPassword, systemPrompt);
       
       // Reload conversations list
       await get().loadConversations();
@@ -206,6 +208,39 @@ export const useConversationStore = create<ConversationStore>((set, get) => ({
     } catch (error) {
       console.error('Failed to delete conversation:', error);
       set({ error: 'Failed to delete conversation' });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+  
+  // Update conversation details
+  updateConversationDetails: async (conversationId: string, title?: string, systemPrompt?: string) => {
+    const { userId, userPassword, currentConversation } = get();
+    if (!userId || !userPassword) {
+      set({ error: 'User not authenticated' });
+      return;
+    }
+    
+    try {
+      set({ isLoading: true, error: null });
+      updateConversationDetails(userId, userPassword, conversationId, title, systemPrompt);
+      
+      // Update current conversation if it's the one being edited
+      if (currentConversation && currentConversation.id === conversationId) {
+        const updatedConversation = {
+          ...currentConversation,
+          title: title !== undefined ? title : currentConversation.title,
+          systemPrompt: systemPrompt !== undefined ? systemPrompt : currentConversation.systemPrompt,
+          lastModified: new Date()
+        };
+        set({ currentConversation: updatedConversation });
+      }
+      
+      // Reload conversations list
+      await get().loadConversations();
+    } catch (error) {
+      console.error('Failed to update conversation details:', error);
+      set({ error: 'Failed to update conversation details' });
     } finally {
       set({ isLoading: false });
     }

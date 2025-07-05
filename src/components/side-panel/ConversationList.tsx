@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { 
-  Button, 
-  Card, 
-  CardBody, 
+import {
+  Button,
+  Card,
+  CardBody,
   Dropdown,
   DropdownTrigger,
   DropdownMenu,
@@ -12,17 +12,22 @@ import {
   ModalHeader,
   ModalBody,
   ModalFooter,
-  useDisclosure
+  useDisclosure,
+  Chip
 } from '@heroui/react';
 import { 
   RiAddLine, 
   RiMoreLine, 
   RiDeleteBin7Line, 
   RiChat3Line,
-  RiTimeLine 
+  RiTimeLine,
+  RiEditLine,
+  RiMagicLine 
 } from 'react-icons/ri';
 import { useConversationStore } from '../../lib/store-conversation';
-import { ConversationSummary } from '../../types';
+import { ConversationSummary, Conversation } from '../../types';
+import { NewConversationDialog } from './NewConversationDialog';
+import { EditConversationDialog } from './EditConversationDialog';
 
 interface ConversationListProps {
   className?: string;
@@ -32,18 +37,26 @@ export default function ConversationList({ className = '' }: ConversationListPro
   const {
     conversations,
     currentConversationId,
+    currentConversation,
     isLoading,
     error,
     createNewConversation,
     switchConversation,
-    deleteConversation
+    deleteConversation,
+    updateConversationDetails
   } = useConversationStore();
   
   const [deletingConversationId, setDeletingConversationId] = useState<string | null>(null);
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [editingConversation, setEditingConversation] = useState<Conversation | null>(null);
+  const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure();
+  const { isOpen: isNewConversationOpen, onOpen: onNewConversationOpen, onClose: onNewConversationClose } = useDisclosure();
+  const { isOpen: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure();
   
-  const handleCreateConversation = async () => {
-    await createNewConversation();
+  const handleCreateConversation = async (title?: string, systemPrompt?: string) => {
+    await createNewConversation(systemPrompt);
+    if (title && currentConversation) {
+      await updateConversationDetails(currentConversation.id, title);
+    }
   };
   
   const handleSwitchConversation = async (conversationId: string) => {
@@ -54,14 +67,24 @@ export default function ConversationList({ className = '' }: ConversationListPro
   
   const handleDeleteConversation = async (conversationId: string) => {
     setDeletingConversationId(conversationId);
-    onOpen();
+    onDeleteOpen();
+  };
+  
+  const handleEditConversation = async (conversationId: string) => {
+    const conversation = conversations.find(c => c.id === conversationId);
+    if (conversation) {
+      // Load full conversation details
+      await switchConversation(conversationId);
+      setEditingConversation(currentConversation);
+      onEditOpen();
+    }
   };
   
   const confirmDeleteConversation = async () => {
     if (deletingConversationId) {
       await deleteConversation(deletingConversationId);
       setDeletingConversationId(null);
-      onClose();
+      onDeleteClose();
     }
   };
   
@@ -96,7 +119,7 @@ export default function ConversationList({ className = '' }: ConversationListPro
           isIconOnly
           variant="light"
           size="sm"
-          onPress={handleCreateConversation}
+          onPress={onNewConversationOpen}
           isLoading={isLoading}
           className="text-primary"
           aria-label="Create new conversation"
@@ -138,9 +161,23 @@ export default function ConversationList({ className = '' }: ConversationListPro
                       className="flex-1 min-w-0 overflow-hidden cursor-pointer"
                       onClick={() => handleSwitchConversation(conversation.id)}
                     >
-                      <h4 className="font-medium text-sm text-foreground truncate">
-                        {conversation.title}
-                      </h4>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-medium text-sm text-foreground truncate">
+                          {conversation.title}
+                        </h4>
+                        {/* Show indicator if conversation has custom system prompt */}
+                        {conversation.systemPrompt && (
+                          <Chip
+                            size="sm"
+                            variant="flat"
+                            color="primary"
+                            className="text-xs px-2"
+                            startContent={<RiMagicLine size={10} />}
+                          >
+                            Custom
+                          </Chip>
+                        )}
+                      </div>
                       {conversation.lastMessage && (
                         <p className="text-xs text-default-500 mt-1 truncate">
                           {conversation.lastMessage}
@@ -169,6 +206,13 @@ export default function ConversationList({ className = '' }: ConversationListPro
                         </DropdownTrigger>
                         <DropdownMenu>
                           <DropdownItem
+                            key="edit"
+                            startContent={<RiEditLine size={16} />}
+                            onPress={() => handleEditConversation(conversation.id)}
+                          >
+                            Edit
+                          </DropdownItem>
+                          <DropdownItem
                             key="delete"
                             className="text-danger"
                             color="danger"
@@ -187,8 +231,25 @@ export default function ConversationList({ className = '' }: ConversationListPro
         )}
       </div>
       
+      {/* New Conversation Dialog */}
+      <NewConversationDialog
+        isOpen={isNewConversationOpen}
+        onClose={onNewConversationClose}
+        onCreateConversation={handleCreateConversation}
+        isLoading={isLoading}
+      />
+      
+      {/* Edit Conversation Dialog */}
+      <EditConversationDialog
+        isOpen={isEditOpen}
+        onClose={onEditClose}
+        conversation={editingConversation}
+        onUpdateConversation={updateConversationDetails}
+        isLoading={isLoading}
+      />
+      
       {/* Delete Confirmation Modal */}
-      <Modal isOpen={isOpen} onClose={onClose} size="sm">
+      <Modal isOpen={isDeleteOpen} onClose={onDeleteClose} size="sm">
         <ModalContent>
           <ModalHeader className="flex flex-col gap-1">
             Delete Conversation
@@ -202,7 +263,7 @@ export default function ConversationList({ className = '' }: ConversationListPro
           <ModalFooter>
             <Button 
               variant="light" 
-              onPress={onClose}
+              onPress={onDeleteClose}
             >
               Cancel
             </Button>

@@ -74,6 +74,7 @@ export function loadConversations(userId: string, password: string): Conversatio
       return {
         id: conv.id,
         title: conv.title,
+        systemPrompt: conv.systemPrompt,
         createdAt: new Date(conv.createdAt),
         lastModified: new Date(conv.lastModified),
         messageCount: conv.messages.length,
@@ -138,10 +139,11 @@ export function loadConversation(userId: string, password: string, conversationI
 /**
  * Create a new conversation
  */
-export function createConversation(userId: string, password: string): Conversation {
+export function createConversation(userId: string, password: string, systemPrompt?: string): Conversation {
   const newConversation: Conversation = {
     id: generateConversationId(),
     title: 'New Conversation',
+    systemPrompt: systemPrompt,
     createdAt: new Date(),
     lastModified: new Date(),
     messages: []
@@ -174,6 +176,32 @@ export function updateConversation(userId: string, password: string, updatedConv
     if (conversations[index].title === 'New Conversation' && updatedConversation.messages.length > 0) {
       conversations[index].title = generateTitle(updatedConversation.messages);
     }
+    
+    saveConversations(userId, password, conversations);
+  }
+}
+
+/**
+ * Update conversation title and system prompt
+ */
+export function updateConversationDetails(
+  userId: string, 
+  password: string, 
+  conversationId: string, 
+  title?: string, 
+  systemPrompt?: string
+): void {
+  const conversations = loadAllConversations(userId, password);
+  const index = conversations.findIndex(conv => conv.id === conversationId);
+  
+  if (index !== -1) {
+    if (title !== undefined) {
+      conversations[index].title = title;
+    }
+    if (systemPrompt !== undefined) {
+      conversations[index].systemPrompt = systemPrompt;
+    }
+    conversations[index].lastModified = new Date();
     
     saveConversations(userId, password, conversations);
   }

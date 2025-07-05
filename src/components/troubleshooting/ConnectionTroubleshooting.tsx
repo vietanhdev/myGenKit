@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardBody, Chip } from '@heroui/react';
-import { RiErrorWarningLine, RiInformationLine, RiCheckLine } from 'react-icons/ri';
+import { RiErrorWarningLine, RiInformationLine } from 'react-icons/ri';
 
 interface ConnectionTroubleshootingProps {
   className?: string;
@@ -49,42 +49,6 @@ export const ConnectionTroubleshooting: React.FC<ConnectionTroubleshootingProps>
                 <div>
                   <strong>Browser Compatibility:</strong> Ensure you're using a modern browser with WebSocket support
                 </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="space-y-3">
-            <h4 className="font-medium text-success flex items-center gap-2">
-              <RiCheckLine size={16} />
-              How to Fix:
-            </h4>
-            
-            <div className="space-y-2 text-sm">
-              <div className="p-3 bg-primary-50 border border-primary-200 rounded-lg">
-                <p className="font-medium text-primary-800 mb-2">Step 1: Verify API Key</p>
-                <ul className="text-primary-700 space-y-1 ml-4">
-                  <li>• Go to <a href="https://ai.google.dev/" target="_blank" rel="noopener noreferrer" className="underline">Google AI Studio</a></li>
-                  <li>• Create or verify your API key</li>
-                  <li>• Ensure it starts with "AIza" and is at least 30 characters long</li>
-                </ul>
-              </div>
-              
-              <div className="p-3 bg-warning-50 border border-warning-200 rounded-lg">
-                <p className="font-medium text-warning-800 mb-2">Step 2: Check API Access</p>
-                <ul className="text-warning-700 space-y-1 ml-4">
-                  <li>• Gemini Live API may require special access</li>
-                  <li>• Check if your account has Live API enabled</li>
-                  <li>• Try a simple text-only request first</li>
-                </ul>
-              </div>
-              
-              <div className="p-3 bg-success-50 border border-success-200 rounded-lg">
-                <p className="font-medium text-success-800 mb-2">Step 3: Debug Connection</p>
-                <ul className="text-success-700 space-y-1 ml-4">
-                  <li>• Open browser developer tools (F12)</li>
-                  <li>• Check the Console tab for detailed error messages</li>
-                  <li>• Look for WebSocket close codes in the logs</li>
-                </ul>
               </div>
             </div>
           </div>
