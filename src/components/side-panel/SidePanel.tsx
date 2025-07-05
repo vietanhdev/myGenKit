@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { RiSidebarFoldLine, RiSidebarUnfoldLine, RiHistoryLine, RiTerminalLine, RiChatSmile3Line, RiCodeLine, RiLogoutBoxLine } from "react-icons/ri";
+import { RiSidebarFoldLine, RiSidebarUnfoldLine, RiHistoryLine, RiTerminalLine, RiChatSmile3Line, RiCodeLine, RiLogoutBoxLine, RiCalendarLine } from "react-icons/ri";
 import { 
   Select, 
   SelectItem, 
@@ -12,11 +12,13 @@ import {
 import { useLiveAPIContext } from "../../contexts/LiveAPIContext";
 import { useLoggerStore } from "../../lib/store-logger";
 import { useConversationStore } from "../../lib/store-conversation";
+import { useCalendarStore } from "../../lib/store-calendar";
 import { useUserSession } from "../../hooks/use-user-session";
 import Logger, { LoggerFilterType } from "../logger/Logger";
 import ConversationList from "./ConversationList";
 import ConversationMessages from "./ConversationMessages";
 import CleanConversationMessages from "./CleanConversationMessages";
+import Calendar from "./Calendar";
 import { ConnectionStatus } from "../status/ConnectionStatus";
 
 const filterOptions = [
@@ -38,6 +40,12 @@ export default function SidePanel() {
     clearStore,
     error: conversationError
   } = useConversationStore();
+  
+  const {
+    initializeStore: initializeCalendarStore,
+    clearStore: clearCalendarStore,
+    error: calendarError
+  } = useCalendarStore();
 
   const [textInput, setTextInput] = useState("");
   const [selectedFilter, setSelectedFilter] = useState<string>("none");
@@ -125,23 +133,25 @@ export default function SidePanel() {
     }
   }, [logs]);
 
-  // Initialize conversation store when user logs in
+  // Initialize conversation and calendar stores when user logs in
   useEffect(() => {
     if (isLoggedIn && currentUser) {
-      // We need the password to initialize the store
+      // We need the password to initialize the stores
       const sessionPassword = localStorage.getItem('genkit_session_password');
       if (sessionPassword) {
         try {
           const sessionData = JSON.parse(sessionPassword);
           initializeStore(currentUser.id, sessionData.password);
+          initializeCalendarStore(currentUser.id, sessionData.password);
         } catch (error) {
-          console.error('Failed to initialize conversation store:', error);
+          console.error('Failed to initialize stores:', error);
         }
       }
     } else if (!isLoggedIn) {
       clearStore();
+      clearCalendarStore();
     }
-  }, [isLoggedIn, currentUser, initializeStore, clearStore]);
+  }, [isLoggedIn, currentUser, initializeStore, clearStore, initializeCalendarStore, clearCalendarStore]);
 
   // listen for log events (technical logs only)
   useEffect(() => {
@@ -232,7 +242,17 @@ export default function SidePanel() {
                   variant="flat"
                   size="sm"
                 >
-                  Error
+                  Conv Error
+                </Chip>
+              )}
+              
+              {calendarError && (
+                <Chip
+                  color="danger"
+                  variant="flat"
+                  size="sm"
+                >
+                  Cal Error
                 </Chip>
               )}
             </div>
@@ -250,6 +270,15 @@ export default function SidePanel() {
                   <div className="flex items-center gap-2">
                     <RiHistoryLine size={16} />
                     <span>Conversations</span>
+                  </div>
+                }
+              />
+              <Tab
+                key="calendar"
+                title={
+                  <div className="flex items-center gap-2">
+                    <RiCalendarLine size={16} />
+                    <span>Calendar</span>
                   </div>
                 }
               />
@@ -318,6 +347,10 @@ export default function SidePanel() {
                     )}
                   </div>
                 </div>
+              </div>
+            ) : activeTab === "calendar" ? (
+              <div className="p-4">
+                <Calendar />
               </div>
             ) : (
               <div className="px-4 py-2">

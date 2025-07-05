@@ -7,13 +7,15 @@ Build your own personal assistant with rich feature with GenAI! Please join me t
 Features in my vision:
 
 - [x] Talking Assistant
-- [x] Local Settings
+- [x] Local Settings (with Encyption)
+- [x] Conversation Scheduler (with Calendar)
 - [ ] Language Learning
+- [ ] Meeting Preparation
+- [ ] Interview Preparation
 - [ ] Todoist
 - [ ] Weekly Planner
 - [ ] Deep Researcher
 - [ ] Canvas
-- [ ] Connect with Calendar
 
 ## Usage
 

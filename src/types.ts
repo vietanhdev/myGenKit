@@ -63,3 +63,27 @@ export type CleanConversation = {
   lastModified: Date;
   messages: ConversationMessage[];
 };
+
+/** calendar event types */
+export type CalendarEvent = {
+  id: string;
+  title: string;
+  description?: string;
+  systemPrompt?: string; // Custom system prompt for this scheduled conversation
+  startTime: Date;
+  endTime: Date;
+  isAllDay?: boolean;
+  status: 'scheduled' | 'in-progress' | 'completed' | 'cancelled';
+  createdAt: Date;
+  lastModified: Date;
+  conversationId?: string; // Link to conversation if started
+};
+
+export type CalendarEventSummary = {
+  id: string;
+  title: string;
+  startTime: Date;
+  endTime: Date;
+  isAllDay?: boolean;
+  status: 'scheduled' | 'in-progress' | 'completed' | 'cancelled';
+};

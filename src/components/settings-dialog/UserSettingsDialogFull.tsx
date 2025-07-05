@@ -9,7 +9,6 @@ import {
   Input,
   Card,
   CardBody,
-  ButtonGroup,
   Textarea,
   Divider,
   Chip,
@@ -252,11 +251,7 @@ export const UserSettingsDialogFull: React.FC<UserSettingsDialogFullProps> = ({
     }
   };
 
-  const handleLoadSettings = () => {
-    if (userSession.hasSettings) {
-      setPasswordDialog({ isOpen: true });
-    }
-  };
+
 
   const needsApiKey = !userSession.currentSettings?.apiKey || forceApiKey;
   const connected = false; // Always allow editing in this standalone component
@@ -274,65 +269,12 @@ export const UserSettingsDialogFull: React.FC<UserSettingsDialogFullProps> = ({
       >
         <ModalContent>
           <ModalHeader className="pb-2">
-            <div className="flex justify-between items-center w-full">
-              <div>
-                <h2 className="text-xl font-bold">Settings</h2>
-                <p className="text-xs text-default-500">
-                  Welcome, {userSession.currentUser?.username}! Configure your voice assistant
-                </p>
-              </div>
-              
-              {userSession.currentUser && (
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="light"
-                    onPress={userSession.logout}
-                    className="text-danger"
-                  >
-                    Logout
-                  </Button>
-                  
-                  {userSession.isAutoUnlocked && (
-                    <div className="text-xs text-success-600">
-                      Auto-unlock: {Math.floor(userSession.remainingTime / 60)}m
-                    </div>
-                  )}
-                </div>
-              )}
+            <div>
+              <h2 className="text-xl font-bold">Settings</h2>
+              <p className="text-xs text-default-500">
+                Welcome, {userSession.currentUser?.username}! Configure your voice assistant
+              </p>
             </div>
-            
-            {/* Settings Management */}
-            {!needsApiKey && (
-              <div className="flex items-center gap-2 mt-2">
-                <span className="text-sm text-default-500">Settings:</span>
-                <ButtonGroup size="sm" variant="bordered">
-                  <Button
-                    onPress={handleLoadSettings}
-                    isDisabled={!userSession.hasSettings}
-                    title="Load saved settings"
-                  >
-                    Load
-                  </Button>
-                  <Button
-                    onPress={handleSaveSettings}
-                    isDisabled={!apiKey.trim()}
-                    title="Save current settings"
-                  >
-                    Save
-                  </Button>
-                  {userSession.hasSettings && (
-                    <Button
-                      onPress={userSession.deleteSettings}
-                      color="danger"
-                      title="Delete saved settings"
-                    >
-                      Delete
-                    </Button>
-                  )}
-                </ButtonGroup>
-              </div>
-            )}
           </ModalHeader>
           
           <ModalBody className="gap-3 py-3">
@@ -378,19 +320,7 @@ export const UserSettingsDialogFull: React.FC<UserSettingsDialogFullProps> = ({
               </Card>
             )}
             
-            {/* Auto-unlock status */}
-            {userSession.isAutoUnlocked && (
-              <Card className="bg-success-50 border-success-200">
-                <CardBody className="p-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-success-600">🔓</span>
-                    <p className="text-success-700 text-sm">
-                      Settings auto-unlock is active for the next {Math.floor(userSession.remainingTime / 60)} minutes
-                    </p>
-                  </div>
-                </CardBody>
-              </Card>
-            )}
+
             
             {/* API Key Section */}
             <div className="space-y-2">

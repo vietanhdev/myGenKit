@@ -19,7 +19,6 @@ import {
   CardBody,
   Divider,
   Chip,
-  ButtonGroup,
 } from "@heroui/react";
 import { useLiveAPIContext } from "../../contexts/LiveAPIContext";
 import VoiceSelector from "./VoiceSelector";
@@ -207,23 +206,6 @@ function SettingsDialogInner() {
     }
   };
 
-  const handleLoadSettings = () => {
-    if (secureSettings.hasStoredSettings) {
-      setPasswordDialog({ isOpen: true, mode: 'unlock' });
-    }
-  };
-
-  const handleDeleteSettings = () => {
-    secureSettings.deleteSettings();
-    setApiKey("");
-    setCurrentPassword("");
-  };
-
-  const handleLockSettings = () => {
-    secureSettings.lock();
-    setCurrentPassword("");
-  };
-
   const needsApiKey = secureSettings.isLocked && !secureSettings.hasStoredSettings;
 
   return (
@@ -252,67 +234,9 @@ function SettingsDialogInner() {
           {(onClose) => (
             <>
               <ModalHeader className="pb-2">
-                <div className="flex justify-between items-center w-full">
-                  <div>
-                    <h2 className="text-xl font-bold">Settings</h2>
-                    <p className="text-xs text-default-500">Configure your voice assistant</p>
-                  </div>
-                  
-                  {/* Settings Management Buttons */}
-                  {!needsApiKey && (
-                    <div className="flex gap-2">
-                      {!secureSettings.isLocked && (
-                        <div className="flex items-center gap-2">
-                          <Chip 
-                            color={secureSettings.isAutoUnlocked ? "success" : "primary"} 
-                            variant="flat" 
-                            size="sm"
-                          >
-                            {secureSettings.isAutoUnlocked ? "🔓 Auto-unlocked" : "🔓 Unlocked"}
-                          </Chip>
-                          {secureSettings.isAutoUnlocked && secureSettings.remainingTime > 0 && (
-                            <Chip color="warning" variant="flat" size="sm">
-                              {Math.floor(secureSettings.remainingTime / 60)}:{String(secureSettings.remainingTime % 60).padStart(2, '0')}
-                            </Chip>
-                          )}
-                        </div>
-                      )}
-                      
-                      <ButtonGroup size="sm" variant="bordered">
-                        <Button
-                          onPress={handleLoadSettings}
-                          isDisabled={!secureSettings.hasStoredSettings}
-                          title="Load saved settings"
-                        >
-                          Load
-                        </Button>
-                        <Button
-                          onPress={handleSaveSettings}
-                          isDisabled={!apiKey.trim()}
-                          title="Save current settings"
-                        >
-                          Save
-                        </Button>
-                        {!secureSettings.isLocked && (
-                          <Button
-                            onPress={handleLockSettings}
-                            title="Lock settings"
-                          >
-                            Lock
-                          </Button>
-                        )}
-                        {secureSettings.hasStoredSettings && (
-                          <Button
-                            onPress={handleDeleteSettings}
-                            color="danger"
-                            title="Delete saved settings"
-                          >
-                            Delete
-                          </Button>
-                        )}
-                      </ButtonGroup>
-                    </div>
-                  )}
+                <div>
+                  <h2 className="text-xl font-bold">Settings</h2>
+                  <p className="text-xs text-default-500">Configure your voice assistant</p>
                 </div>
               </ModalHeader>
               
@@ -636,18 +560,6 @@ function StandaloneSettingsDialog() {
     }
   };
 
-  const handleLoadSettings = () => {
-    if (secureSettings.hasStoredSettings) {
-      setPasswordDialog({ isOpen: true, mode: 'unlock' });
-    }
-  };
-
-  const handleDeleteSettings = () => {
-    secureSettings.deleteSettings();
-    setApiKey("");
-    setCurrentPassword("");
-  };
-
   const needsApiKey = secureSettings.isLocked && !secureSettings.hasStoredSettings;
 
   return (
@@ -676,59 +588,9 @@ function StandaloneSettingsDialog() {
           {(onClose) => (
             <>
               <ModalHeader className="pb-2">
-                <div className="flex justify-between items-center w-full">
-                  <div>
-                    <h2 className="text-xl font-bold">Settings</h2>
-                    <p className="text-xs text-default-500">Configure your voice assistant</p>
-                  </div>
-                  
-                  {/* Settings Management Buttons */}
-                  {!needsApiKey && (
-                    <div className="flex gap-2">
-                      {!secureSettings.isLocked && (
-                        <div className="flex items-center gap-2">
-                          <Chip 
-                            color={secureSettings.isAutoUnlocked ? "success" : "primary"} 
-                            variant="flat" 
-                            size="sm"
-                          >
-                            {secureSettings.isAutoUnlocked ? "🔓 Auto-unlocked" : "🔓 Unlocked"}
-                          </Chip>
-                          {secureSettings.isAutoUnlocked && secureSettings.remainingTime > 0 && (
-                            <Chip color="warning" variant="flat" size="sm">
-                              {Math.floor(secureSettings.remainingTime / 60)}:{String(secureSettings.remainingTime % 60).padStart(2, '0')}
-                            </Chip>
-                          )}
-                        </div>
-                      )}
-                      
-                      <ButtonGroup size="sm" variant="bordered">
-                        <Button
-                          onPress={handleLoadSettings}
-                          isDisabled={!secureSettings.hasStoredSettings}
-                          title="Load saved settings"
-                        >
-                          Load
-                        </Button>
-                        <Button
-                          onPress={handleSaveSettings}
-                          isDisabled={!apiKey.trim()}
-                          title="Save current settings"
-                        >
-                          Save
-                        </Button>
-                        {secureSettings.hasStoredSettings && (
-                          <Button
-                            onPress={handleDeleteSettings}
-                            color="danger"
-                            title="Delete saved settings"
-                          >
-                            Delete
-                          </Button>
-                        )}
-                      </ButtonGroup>
-                    </div>
-                  )}
+                <div>
+                  <h2 className="text-xl font-bold">Settings</h2>
+                  <p className="text-xs text-default-500">Configure your voice assistant</p>
                 </div>
               </ModalHeader>
               
