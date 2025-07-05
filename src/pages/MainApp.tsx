@@ -8,6 +8,7 @@ import { useVisualizationSettings } from '../hooks/use-visualization-settings';
 import { ConnectionTroubleshooting } from '../components/troubleshooting/ConnectionTroubleshooting';
 import { ErrorNotification } from '../components/notifications/ErrorNotification';
 import { ToastContainer, useToast } from '../components/notifications/Toast';
+import { ConnectionStatus } from '../components/status/ConnectionStatus';
 import { useLiveAPIContext } from '../contexts/LiveAPIContext';
 import { Button } from '@heroui/react';
 import { RiCloseLine } from 'react-icons/ri';
@@ -171,6 +172,11 @@ const MainAppContent: React.FC = () => {
     <>
       {/* Background Audio Visualization */}
       {isLoaded && <BackgroundVisual3D config={visualizationConfig} />}
+      
+      {/* Connection Status - Fixed Top Right */}
+      <div className="fixed top-4 right-4 z-40">
+        <ConnectionStatus />
+      </div>
       
       <div className="app-container">
         <div className="bg-background">

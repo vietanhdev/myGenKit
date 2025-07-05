@@ -37,20 +37,7 @@ const MONTHS = [
   'July', 'August', 'September', 'October', 'November', 'December'
 ];
 
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'scheduled':
-      return 'primary';
-    case 'in-progress':
-      return 'warning';
-    case 'completed':
-      return 'success';
-    case 'cancelled':
-      return 'danger';
-    default:
-      return 'default';
-  }
-};
+
 
 const formatTime = (date: Date): string => {
   return date.toLocaleTimeString('en-US', { 

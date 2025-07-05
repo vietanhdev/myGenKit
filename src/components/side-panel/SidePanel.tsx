@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { RiSidebarFoldLine, RiSidebarUnfoldLine, RiHistoryLine, RiTerminalLine, RiChatSmile3Line, RiCodeLine, RiLogoutBoxLine, RiCalendarLine } from "react-icons/ri";
+import { RiSidebarFoldLine, RiSidebarUnfoldLine, RiHistoryLine, RiTerminalLine, RiLogoutBoxLine, RiCalendarLine, RiSettingsLine } from "react-icons/ri";
 import { 
   Select, 
   SelectItem, 
@@ -7,7 +7,8 @@ import {
   Textarea, 
   Chip,
   Tabs,
-  Tab
+  Tab,
+  useDisclosure
 } from "@heroui/react";
 import { useLiveAPIContext } from "../../contexts/LiveAPIContext";
 import { useLoggerStore } from "../../lib/store-logger";
@@ -16,10 +17,9 @@ import { useCalendarStore } from "../../lib/store-calendar";
 import { useUserSession } from "../../hooks/use-user-session";
 import Logger, { LoggerFilterType } from "../logger/Logger";
 import ConversationList from "./ConversationList";
-import ConversationMessages from "./ConversationMessages";
 import CleanConversationMessages from "./CleanConversationMessages";
 import Calendar from "./Calendar";
-import { ConnectionStatus } from "../status/ConnectionStatus";
+import { UserSettingsDialogFull } from "../settings-dialog/UserSettingsDialogFull";
 
 const filterOptions = [
   { value: "conversations", label: "Conversations" },
@@ -50,7 +50,14 @@ export default function SidePanel() {
   const [textInput, setTextInput] = useState("");
   const [selectedFilter, setSelectedFilter] = useState<string>("none");
   const [activeTab, setActiveTab] = useState<string>("conversations");
-  const [showCleanMessages, setShowCleanMessages] = useState(true);
+  const { isOpen: isSettingsOpen, onOpen: onSettingsOpen, onClose: onSettingsClose } = useDisclosure();
+
+  // Ensure activeTab is valid in production environment
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'development' && activeTab === 'logs') {
+      setActiveTab('conversations');
+    }
+  }, [activeTab]);
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     // Load saved width from localStorage or default to 50% of viewport width
     const savedWidth = localStorage.getItem('sidebar-width');
@@ -202,16 +209,30 @@ export default function SidePanel() {
         )}
         <div className="flex items-center gap-2">
           {open && (
-            <Button
-              isIconOnly
-              variant="light"
-              onPress={() => logout()}
-              size="sm"
-              className="text-danger"
-              aria-label="Logout"
-            >
-              <RiLogoutBoxLine size={18} />
-            </Button>
+            <>
+              <Button
+                isIconOnly
+                variant="light"
+                onPress={onSettingsOpen}
+                size="sm"
+                className="text-default-500 w-[80px]"
+                aria-label="Settings"
+              >
+                <RiSettingsLine size={18} />
+                <span>Settings</span>
+              </Button>
+              <Button
+                isIconOnly
+                variant="light"
+                onPress={() => logout()}
+                size="sm"
+                className="text-danger w-[80px]"
+                aria-label="Logout"
+              >
+                <RiLogoutBoxLine size={18} />
+                <span>Logout</span>
+              </Button>
+            </>
           )}
           <Button
             isIconOnly
@@ -233,29 +254,29 @@ export default function SidePanel() {
         <>
           {/* Tab Controls - Fixed height */}
           <div className="px-4 py-3 border-b-1 border-divider bg-content1 flex-shrink-0">
-            <div className="flex gap-2 items-center mb-3">
-              <ConnectionStatus />
-              
-              {conversationError && (
-                <Chip
-                  color="danger"
-                  variant="flat"
-                  size="sm"
-                >
-                  Conv Error
-                </Chip>
-              )}
-              
-              {calendarError && (
-                <Chip
-                  color="danger"
-                  variant="flat"
-                  size="sm"
-                >
-                  Cal Error
-                </Chip>
-              )}
-            </div>
+            {(conversationError || calendarError) && (
+              <div className="flex gap-2 items-center mb-3">
+                {conversationError && (
+                  <Chip
+                    color="danger"
+                    variant="flat"
+                    size="sm"
+                  >
+                    Conv Error
+                  </Chip>
+                )}
+                
+                {calendarError && (
+                  <Chip
+                    color="danger"
+                    variant="flat"
+                    size="sm"
+                  >
+                    Cal Error
+                  </Chip>
+                )}
+              </div>
+            )}
             
             <Tabs
               selectedKey={activeTab}
@@ -282,15 +303,17 @@ export default function SidePanel() {
                   </div>
                 }
               />
-              <Tab
-                key="logs"
-                title={
-                  <div className="flex items-center gap-2">
-                    <RiTerminalLine size={16} />
-                    <span>Logs</span>
-                  </div>
-                }
-              />
+              {process.env.NODE_ENV === 'development' && (
+                <Tab
+                  key="logs"
+                  title={
+                    <div className="flex items-center gap-2">
+                      <RiTerminalLine size={16} />
+                      <span>Debug</span>
+                    </div>
+                  }
+                />
+              )}
             </Tabs>
           </div>
 
@@ -310,41 +333,9 @@ export default function SidePanel() {
                 
                 {/* Conversation Messages - Expandable */}
                 <div className="flex-1 flex flex-col overflow-hidden">
-                  {/* Message View Toggle */}
-                  <div className="px-4 py-2 border-b-1 border-divider bg-content1 flex-shrink-0">
-                    <div className="flex gap-1">
-                      <Button
-                        size="sm"
-                        variant={showCleanMessages ? "solid" : "light"}
-                        color={showCleanMessages ? "primary" : "default"}
-                        onPress={() => setShowCleanMessages(true)}
-                        startContent={<RiChatSmile3Line size={14} />}
-                      >
-                        Chat
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant={!showCleanMessages ? "solid" : "light"}
-                        color={!showCleanMessages ? "primary" : "default"}
-                        onPress={() => setShowCleanMessages(false)}
-                        startContent={<RiCodeLine size={14} />}
-                      >
-                        Technical
-                      </Button>
-                    </div>
-                  </div>
-                  
                   {/* Message Content */}
                   <div className="flex-1 overflow-y-auto">
-                    {showCleanMessages ? (
-                      <CleanConversationMessages />
-                    ) : (
-                      <div className="p-4">
-                        <ConversationMessages
-                          filter={(selectedFilter as LoggerFilterType) || "conversations"}
-                        />
-                      </div>
-                    )}
+                    <CleanConversationMessages />
                   </div>
                 </div>
               </div>
@@ -440,6 +431,13 @@ export default function SidePanel() {
           </div>
         </div>
       )}
+      
+      {/* Settings Dialog */}
+      <UserSettingsDialogFull
+        isOpen={isSettingsOpen}
+        onClose={onSettingsClose}
+        forceApiKey={false}
+      />
     </div>
   );
 }
