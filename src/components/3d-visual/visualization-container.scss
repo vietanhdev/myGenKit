@@ -1,0 +1,23 @@
+.background-visualization-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  
+  /* Smooth transition when switching between visualizations */
+  .visualization-transition {
+    transition: opacity 0.3s ease-in-out;
+  }
+
+  /* Ensure proper layering */
+  > * {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+} 

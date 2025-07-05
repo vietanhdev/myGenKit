@@ -1,0 +1,45 @@
+.css-visualizer-container {
+  overflow: hidden;
+  
+  .css-visualizer-bar {
+    position: absolute;
+    bottom: 0;
+    width: 4%;
+    height: 2%;
+    background: linear-gradient(to top, currentColor 0%, transparent 100%);
+    border-radius: 2px 2px 0 0;
+    transition: height 0.1s ease-out, opacity 0.1s ease-out;
+    transform-origin: bottom;
+    will-change: height, opacity;
+    animation: float 3s ease-in-out infinite;
+    
+    &:nth-child(even) {
+      animation-delay: -1.5s;
+    }
+    
+    &:nth-child(3n) {
+      animation-delay: -1s;
+    }
+    
+    &:nth-child(5n) {
+      animation-delay: -0.5s;
+    }
+  }
+}
+
+@keyframes float {
+  0%, 100% { 
+    transform: translateY(0px) scale(1);
+  }
+  50% { 
+    transform: translateY(-5px) scale(1.02);
+  }
+}
+
+// Reduce motion for users who prefer it
+@media (prefers-reduced-motion: reduce) {
+  .css-visualizer-bar {
+    animation: none !important;
+    transition: none !important;
+  }
+} 
