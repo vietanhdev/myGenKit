@@ -231,8 +231,12 @@ export const UserSettingsDialogFull: React.FC<UserSettingsDialogFullProps> = ({
       // Note: LiveAPI context updates are handled by the parent provider
       // No direct LiveAPI context manipulation needed here
       
-      // Close dialog after successful save
+      // Close dialog after successful save and let the service restart
       onClose();
+      
+      // The UserAPIProvider will automatically detect the new API key
+      // and reinitialize the LiveAPI client
+      
     } catch (err: any) {
       console.error('Save settings error:', err);
       
@@ -352,7 +356,7 @@ export const UserSettingsDialogFull: React.FC<UserSettingsDialogFullProps> = ({
                   <div className="flex items-start gap-3">
                     <span className="text-primary-600 text-2xl">🔑</span>
                     <div className="flex-1">
-                      <h3 className="text-primary-800 font-semibold mb-2">Welcome to MyGenKit!</h3>
+                      <h3 className="text-primary-800 font-semibold mb-2">Welcome to myGenKit!</h3>
                       <p className="text-primary-700 text-sm mb-3">
                         To get started, please enter your Google AI API key below. Your key will be encrypted 
                         and stored securely with your account.

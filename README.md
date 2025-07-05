@@ -1,4 +1,4 @@
-<img src="./logo.png" width="200px"></img>
+<img src="./public/logo.png" width="200px"></img>
 
 # myGenKit
 

@@ -1,9 +1,9 @@
 import React, { useState, useEffect, ReactNode } from 'react';
 import { LiveAPIProvider } from '../../contexts/LiveAPIContext';
 import { useUserSession } from '../../hooks/use-user-session';
-import { LoginForm } from '../auth/LoginForm';
 import { UserSettingsDialogFull } from '../settings-dialog/UserSettingsDialogFull';
-import { Card, CardBody, useDisclosure } from '@heroui/react';
+import { Card, CardBody, useDisclosure, Spinner } from '@heroui/react';
+import { ToastContainer, useToast } from '../notifications/Toast';
 import { LiveClientOptions } from '../../types';
 
 interface UserAPIProviderProps {
@@ -13,16 +13,42 @@ interface UserAPIProviderProps {
 export const UserAPIProvider: React.FC<UserAPIProviderProps> = ({ children }) => {
   const userSession = useUserSession();
   const [currentApiKey, setCurrentApiKey] = useState<string>('');
+  const [isRestarting, setIsRestarting] = useState(false);
   const { isOpen: isSettingsOpen, onOpen: onSettingsOpen, onClose: onSettingsClose } = useDisclosure();
+  const { messages: toastMessages, addToast, removeToast } = useToast();
 
   // Determine which API key to use from current user settings
   useEffect(() => {
-    if (userSession.currentSettings?.apiKey) {
-      setCurrentApiKey(userSession.currentSettings.apiKey);
-    } else {
-      setCurrentApiKey('');
+    const newApiKey = userSession.currentSettings?.apiKey || '';
+    
+    // If API key is changing and we had a previous key, show restart loading
+    if (currentApiKey && newApiKey && currentApiKey !== newApiKey) {
+      setIsRestarting(true);
+      
+      // Show toast notification about API key change
+      addToast({
+        type: 'info',
+        title: 'API Key Updated',
+        message: 'Restarting service with new API key...',
+        duration: 3000
+      });
+      
+      // Clear restart state after a short delay to allow service to reinitialize
+      setTimeout(() => {
+        setIsRestarting(false);
+        
+        // Show success toast after restart
+        addToast({
+          type: 'success',
+          title: 'Service Restarted',
+          message: 'Ready to connect with new API key',
+          duration: 3000
+        });
+      }, 2000);
     }
-  }, [userSession.currentSettings]);
+    
+    setCurrentApiKey(newApiKey);
+  }, [userSession.currentSettings, currentApiKey, addToast]);
 
   // Show settings dialog if user is logged in but has no API key
   useEffect(() => {
@@ -37,10 +63,20 @@ export const UserAPIProvider: React.FC<UserAPIProviderProps> = ({ children }) =>
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Card className="max-w-md">
           <CardBody className="p-6 text-center space-y-4">
-            <div className="text-4xl">⏳</div>
-            <h2 className="text-xl font-bold">Loading...</h2>
+            <div className="flex items-center justify-center gap-3 mb-2">
+              <img 
+                src="/logo.svg" 
+                alt="myGenKit Logo" 
+                className="w-10 h-10 shrink-0"
+                onError={(e) => {
+                  // Fallback to PNG if SVG fails to load
+                  e.currentTarget.src = "/logo.png";
+                }}
+              />
+              <h2 className="text-xl font-bold">myGenKit</h2>
+            </div>
             <p className="text-sm text-default-500">
-              Initializing MyGenKit...
+              Initializing myGenKit...
             </p>
           </CardBody>
         </Card>
@@ -48,19 +84,43 @@ export const UserAPIProvider: React.FC<UserAPIProviderProps> = ({ children }) =>
     );
   }
 
-  // Show login form if user is not logged in
-  if (!userSession.isLoggedIn) {
+  // Service restart state
+  if (isRestarting) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <LoginForm
-          isOpen={true}
-          onLogin={userSession.login}
-          onRegister={userSession.register}
-          existingUsers={userSession.getAllUsers()}
-          isLoading={userSession.isLoading}
-        />
+        <Card className="max-w-md">
+          <CardBody className="p-6 text-center space-y-4">
+            <div className="flex items-center justify-center gap-3 mb-2">
+              <img 
+                src="/logo.svg" 
+                alt="myGenKit Logo" 
+                className="w-10 h-10 shrink-0"
+                onError={(e) => {
+                  // Fallback to PNG if SVG fails to load
+                  e.currentTarget.src = "/logo.png";
+                }}
+              />
+              <h2 className="text-xl font-bold">myGenKit</h2>
+            </div>
+            <div className="flex items-center justify-center gap-3">
+              <Spinner size="sm" />
+              <p className="text-sm text-primary-600">
+                Restarting service with new API key...
+              </p>
+            </div>
+            <p className="text-xs text-default-400">
+              This will only take a moment
+            </p>
+          </CardBody>
+        </Card>
       </div>
     );
+  }
+
+  // This component should only be used in protected routes
+  // The login handling is now done at the routing level
+  if (!userSession.isLoggedIn) {
+    return null;
   }
 
   // Show API key setup if user is logged in but has no API key
@@ -68,14 +128,24 @@ export const UserAPIProvider: React.FC<UserAPIProviderProps> = ({ children }) =>
     return (
       <>
         <div className="min-h-screen flex items-center justify-center bg-background">
-          <Card className="max-w-md">
-            <CardBody className="p-6 text-center space-y-4">
-              <div className="text-4xl">🔑</div>
+                  <Card className="max-w-md">
+          <CardBody className="p-6 text-center space-y-4">
+            <div className="flex items-center justify-center gap-3 mb-2">
+              <img 
+                src="/logo.svg" 
+                alt="myGenKit Logo" 
+                className="w-8 h-8 shrink-0"
+                onError={(e) => {
+                  // Fallback to PNG if SVG fails to load
+                  e.currentTarget.src = "/logo.png";
+                }}
+              />
               <h2 className="text-xl font-bold">API Key Required</h2>
-              <p className="text-sm text-default-500">
-                Welcome, {userSession.currentUser?.username}! To use MyGenKit, 
-                you need to provide your Google AI API key.
-              </p>
+            </div>
+            <p className="text-sm text-default-500">
+              Welcome, {userSession.currentUser?.username}! To use myGenKit, 
+              you need to provide your Google AI API key.
+            </p>
               
               {userSession.isAutoUnlocked && (
                 <div className="p-3 bg-success-50 border border-success-200 rounded-lg">
@@ -130,6 +200,13 @@ export const UserAPIProvider: React.FC<UserAPIProviderProps> = ({ children }) =>
       {children}
       
       {/* Settings dialog is now integrated with the settings button in the main app */}
+      
+      {/* Toast Notifications for API key changes - positioned at top-left */}
+      <ToastContainer 
+        messages={toastMessages}
+        onClose={removeToast}
+        position="top-left"
+      />
     </LiveAPIProvider>
   );
 }; 

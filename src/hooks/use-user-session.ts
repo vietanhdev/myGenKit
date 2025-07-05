@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   User, 
   UserSettings, 
@@ -52,6 +53,7 @@ const SESSION_PASSWORD_KEY = 'genkit_session_password';
 const SESSION_TIMESTAMP_KEY = 'genkit_session_timestamp';
 
 export function useUserSession(): UseUserSessionResult {
+  const navigate = useNavigate();
   const [currentUser, setCurrentUserState] = useState<User | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -164,11 +166,13 @@ export function useUserSession(): UseUserSessionResult {
         clearInterval(countdownRef.current);
         countdownRef.current = null;
       }
+      // Redirect to login page on timeout
+      navigate('/login', { replace: true });
     }, SESSION_TIMEOUT * 1000);
     
     // Update remaining time immediately
     setRemainingTime(SESSION_TIMEOUT);
-  }, []);
+  }, [navigate]);
 
   // Countdown timer - start when auto-unlocked
   useEffect(() => {
@@ -190,6 +194,8 @@ export function useUserSession(): UseUserSessionResult {
             clearInterval(countdownRef.current);
             countdownRef.current = null;
           }
+          // Redirect to login page on timeout
+          navigate('/login', { replace: true });
         }
       }, 1000);
     } else if (!isAutoUnlocked && countdownRef.current) {
@@ -206,7 +212,7 @@ export function useUserSession(): UseUserSessionResult {
         countdownRef.current = null;
       }
     };
-  }, [isAutoUnlocked]);
+  }, [isAutoUnlocked, navigate]);
 
   // Auto-unlock settings when password is available (simplified)
   useEffect(() => {
@@ -232,7 +238,7 @@ export function useUserSession(): UseUserSessionResult {
     if (currentUser !== null) {
       autoUnlock();
     }
-  }, [currentUser, hasSettings, currentSettings, getSessionPassword]);
+  }, [currentUser, hasSettings, currentSettings, getSessionPassword, navigate]);
 
   // Activity listeners disabled - using manual timeout management in login/register
   // This prevents interference with the manual timeout setup
@@ -288,6 +294,8 @@ export function useUserSession(): UseUserSessionResult {
             clearInterval(countdownRef.current);
             countdownRef.current = null;
           }
+          // Redirect to login page on timeout
+          navigate('/login', { replace: true });
         }, SESSION_TIMEOUT * 1000);
         
         console.log('Login state setup complete - password stored, auto-unlock enabled');
@@ -327,7 +335,7 @@ export function useUserSession(): UseUserSessionResult {
       console.error('Login failed:', error);
       return false;
     }
-  }, [getSessionPassword]);
+  }, [getSessionPassword, navigate]);
 
   // Register function
   const register = useCallback(async (username: string, password: string): Promise<boolean> => {
@@ -365,6 +373,8 @@ export function useUserSession(): UseUserSessionResult {
           clearInterval(countdownRef.current);
           countdownRef.current = null;
         }
+        // Redirect to login page on timeout
+        navigate('/login', { replace: true });
       }, SESSION_TIMEOUT * 1000);
       
       console.log('Registration state setup complete - password stored, auto-unlock enabled');
@@ -379,7 +389,7 @@ export function useUserSession(): UseUserSessionResult {
       console.error('Registration failed:', error);
       return false;
     }
-  }, [getSessionPassword]);
+  }, [getSessionPassword, navigate]);
 
   // Logout function
   const logout = useCallback(() => {
@@ -402,10 +412,9 @@ export function useUserSession(): UseUserSessionResult {
       countdownRef.current = null;
     }
 
-    setTimeout(() => {
-      window.location.reload();
-    }, 1000);
-  }, []);
+    // Redirect to login page
+    navigate('/login', { replace: true });
+  }, [navigate]);
 
   // Load settings function
   const loadSettings = useCallback(async (password: string): Promise<boolean> => {

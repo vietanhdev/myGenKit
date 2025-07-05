@@ -124,9 +124,17 @@ export const LoginForm: React.FC<LoginFormProps> = ({
     >
       <ModalContent>
         <ModalHeader className="flex flex-col gap-1 text-center">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <div className="text-2xl">🔐</div>
-            <h2 className="text-xl font-bold">MyGenKit</h2>
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <img 
+              src="/logo.svg" 
+              alt="myGenKit Logo" 
+              className="w-8 h-8 shrink-0"
+              onError={(e) => {
+                // Fallback to PNG if SVG fails to load
+                e.currentTarget.src = "/logo.png";
+              }}
+            />
+            <h2 className="text-xl font-bold">myGenKit</h2>
           </div>
           <p className="text-sm text-default-500">
             {existingUsers.length > 0 

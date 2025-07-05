@@ -336,7 +336,7 @@ function SettingsDialogInner() {
                       <div className="flex items-start gap-3">
                         <span className="text-primary-600 text-2xl">🔑</span>
                         <div className="flex-1">
-                          <h3 className="text-primary-800 font-semibold mb-2">Welcome to MyGenKit!</h3>
+                          <h3 className="text-primary-800 font-semibold mb-2">Welcome to myGenKit!</h3>
                           <p className="text-primary-700 text-sm mb-3">
                             To get started, please enter your Google AI API key below. Your key will be encrypted 
                             and stored securely on your device.
@@ -739,7 +739,7 @@ function StandaloneSettingsDialog() {
                       <div className="flex items-start gap-3">
                         <span className="text-primary-600 text-2xl">🔑</span>
                         <div className="flex-1">
-                          <h3 className="text-primary-800 font-semibold mb-2">Welcome to MyGenKit!</h3>
+                          <h3 className="text-primary-800 font-semibold mb-2">Welcome to myGenKit!</h3>
                           <p className="text-primary-700 text-sm mb-3">
                             To get started, please enter your Google AI API key below. Your key will be encrypted 
                             and stored securely on your device.

@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { RiSidebarFoldLine, RiSidebarUnfoldLine, RiHistoryLine, RiTerminalLine, RiChatSmile3Line, RiCodeLine } from "react-icons/ri";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { RiSidebarFoldLine, RiSidebarUnfoldLine, RiHistoryLine, RiTerminalLine, RiChatSmile3Line, RiCodeLine, RiLogoutBoxLine } from "react-icons/ri";
 import { 
   Select, 
   SelectItem, 
@@ -17,6 +17,7 @@ import Logger, { LoggerFilterType } from "../logger/Logger";
 import ConversationList from "./ConversationList";
 import ConversationMessages from "./ConversationMessages";
 import CleanConversationMessages from "./CleanConversationMessages";
+import { ConnectionStatus } from "../status/ConnectionStatus";
 
 const filterOptions = [
   { value: "conversations", label: "Conversations" },
@@ -30,7 +31,7 @@ export default function SidePanel() {
   const loggerRef = useRef<HTMLDivElement>(null);
   const loggerLastHeightRef = useRef<number>(-1);
   const { log, logs } = useLoggerStore();
-  const { currentUser, isLoggedIn } = useUserSession();
+  const { currentUser, isLoggedIn, logout } = useUserSession();
   
   const {
     initializeStore,
@@ -53,7 +54,7 @@ export default function SidePanel() {
 
   // Sidebar resize constraints
   const MIN_WIDTH = 240; // Minimum width in pixels
-  const getMaxWidth = () => Math.floor(window.innerWidth * 0.8); // Maximum width (80% of viewport)
+  const getMaxWidth = useCallback(() => Math.floor(window.innerWidth * 0.8), []); // Maximum width (80% of viewport)
 
   // Handle resize start
   const handleResizeStart = (e: React.MouseEvent) => {
@@ -66,13 +67,13 @@ export default function SidePanel() {
   };
 
   // Handle resize drag
-  const handleResizeDrag = (e: MouseEvent) => {
+  const handleResizeDrag = useCallback((e: MouseEvent) => {
     if (!isResizing) return;
     
     const deltaX = e.clientX - dragStartX;
     const newWidth = Math.min(Math.max(dragStartWidth + deltaX, MIN_WIDTH), getMaxWidth());
     setSidebarWidth(newWidth);
-  };
+  }, [isResizing, dragStartX, dragStartWidth, getMaxWidth]);
 
   // Save sidebar width to localStorage
   useEffect(() => {
@@ -80,11 +81,11 @@ export default function SidePanel() {
   }, [sidebarWidth]);
 
   // Handle resize end
-  const handleResizeEnd = () => {
+  const handleResizeEnd = useCallback(() => {
     setIsResizing(false);
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
-  };
+  }, []);
 
   // Add global mouse event listeners for resize
   useEffect(() => {
@@ -97,7 +98,7 @@ export default function SidePanel() {
         document.removeEventListener('mouseup', handleResizeEnd);
       };
     }
-  }, [isResizing, dragStartX, dragStartWidth, sidebarWidth, handleResizeDrag, handleResizeEnd]);
+  }, [isResizing, handleResizeDrag, handleResizeEnd]);
 
   // Handle window resize to adjust sidebar constraints
   useEffect(() => {
@@ -110,7 +111,7 @@ export default function SidePanel() {
 
     window.addEventListener('resize', handleWindowResize);
     return () => window.removeEventListener('resize', handleWindowResize);
-  }, [sidebarWidth]);
+  }, [sidebarWidth, getMaxWidth]);
 
   //scroll the log to the bottom when new logs come in
   useEffect(() => {
@@ -176,21 +177,46 @@ export default function SidePanel() {
       {/* Header - Fixed height */}
       <div className="flex justify-between items-center px-4 py-3 border-b-1 border-divider bg-content1 flex-shrink-0">
         {open && (
-          <h2 className="text-lg font-semibold text-foreground">MyGenKit</h2>
+          <div className="flex items-center gap-3">
+            <img 
+              src="/logo.svg" 
+              alt="myGenKit Logo" 
+              className="w-8 h-8 shrink-0"
+              onError={(e) => {
+                // Fallback to PNG if SVG fails to load
+                e.currentTarget.src = "/logo.png";
+              }}
+            />
+            <h2 className="text-lg font-semibold text-foreground truncate">myGenKit</h2>
+          </div>
         )}
-        <Button
-          isIconOnly
-          variant="light"
-          onPress={() => setOpen(!open)}
-          size="sm"
-          className="ml-auto"
-        >
-          {open ? (
-            <RiSidebarFoldLine size={18} />
-          ) : (
-            <RiSidebarUnfoldLine size={18} />
+        <div className="flex items-center gap-2">
+          {open && (
+            <Button
+              isIconOnly
+              variant="light"
+              onPress={() => logout()}
+              size="sm"
+              className="text-danger"
+              aria-label="Logout"
+            >
+              <RiLogoutBoxLine size={18} />
+            </Button>
           )}
-        </Button>
+          <Button
+            isIconOnly
+            variant="light"
+            onPress={() => setOpen(!open)}
+            size="sm"
+            aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
+          >
+            {open ? (
+              <RiSidebarFoldLine size={18} />
+            ) : (
+              <RiSidebarUnfoldLine size={18} />
+            )}
+          </Button>
+        </div>
       </div>
 
       {open && (
@@ -198,13 +224,7 @@ export default function SidePanel() {
           {/* Tab Controls - Fixed height */}
           <div className="px-4 py-3 border-b-1 border-divider bg-content1 flex-shrink-0">
             <div className="flex gap-2 items-center mb-3">
-              <Chip
-                color={connected ? "success" : "warning"}
-                variant="flat"
-                size="sm"
-              >
-                {connected ? "🔵 Live" : "⏸️ Paused"}
-              </Chip>
+              <ConnectionStatus />
               
               {conversationError && (
                 <Chip

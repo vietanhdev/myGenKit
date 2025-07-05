@@ -88,6 +88,17 @@ export class GenAILiveClient extends EventEmitter<LiveClientEventTypes> {
 
   constructor(options: LiveClientOptions) {
     super();
+    
+    // Validate API key format
+    if (!options.apiKey) {
+      throw new Error("API key is required");
+    }
+    
+    if (!options.apiKey.startsWith("AIza") || options.apiKey.length < 30) {
+      console.warn("⚠️  API key format seems incorrect. Google AI API keys should start with 'AIza' and be longer than 30 characters.");
+      console.warn("   Get your API key from: https://ai.google.dev/");
+    }
+    
     this.client = new GoogleGenAI(options);
     this.send = this.send.bind(this);
     this.onopen = this.onopen.bind(this);
@@ -189,34 +200,76 @@ export class GenAILiveClient extends EventEmitter<LiveClientEventTypes> {
 
   async connect(model: string, config: LiveConnectConfig): Promise<boolean> {
     if (this._status === "connected" || this._status === "connecting") {
+      console.warn("Already connected or connecting, status:", this._status);
       return false;
     }
+
+    console.log("Attempting to connect to GenAI Live API...");
+    console.log("Model:", model);
+    console.log("Config:", JSON.stringify(config, null, 2));
 
     this._status = "connecting";
     this.config = config;
     this._model = model;
 
     const callbacks: LiveCallbacks = {
-      onopen: this.onopen,
-      onmessage: this.onmessage,
-      onerror: this.onerror,
-      onclose: this.onclose,
+      onopen: this.onopen.bind(this),
+      onmessage: this.onmessage.bind(this),
+      onerror: this.onerror.bind(this),
+      onclose: this.onclose.bind(this),
     };
 
     try {
+      console.log("Calling client.live.connect...");
       this._session = await this.client.live.connect({
         model,
         config,
         callbacks,
       });
+      console.log("Connection established successfully");
+      // Note: status will be set to "connected" in onopen callback
+      return true;
     } catch (e) {
       console.error("Error connecting to GenAI Live:", e);
+      
+      // Create detailed error information
+      let errorMessage = "Failed to connect to Google AI Live API";
+      let errorDetails: any = {};
+      
+      if (e instanceof Error) {
+        errorMessage = e.message;
+        errorDetails = {
+          message: e.message,
+          stack: e.stack,
+          name: e.name
+        };
+        
+        // Enhanced error analysis
+        if (e.message.includes('401') || e.message.includes('unauthorized')) {
+          errorMessage = "API key is invalid or unauthorized";
+        } else if (e.message.includes('403') || e.message.includes('forbidden')) {
+          errorMessage = "API key does not have access to Gemini Live API";
+        } else if (e.message.includes('429') || e.message.includes('quota')) {
+          errorMessage = "API quota exceeded or rate limit reached";
+        } else if (e.message.includes('network') || e.message.includes('fetch')) {
+          errorMessage = "Network connectivity issue - check your internet connection";
+        }
+        
+        console.error("Error details:", errorDetails);
+      }
+      
+      // Emit a more detailed error event
+      this.emit("error", new ErrorEvent("connection", {
+        message: errorMessage,
+        error: e,
+        filename: "genai-live-client.ts",
+        lineno: 0,
+        colno: 0
+      }));
+      
       this._status = "disconnected";
       return false;
     }
-
-    this._status = "connected";
-    return true;
   }
 
   public disconnect() {
@@ -236,19 +289,55 @@ export class GenAILiveClient extends EventEmitter<LiveClientEventTypes> {
   }
 
   protected onopen() {
+    console.log("WebSocket connection opened successfully");
+    this._status = "connected";
     this.log("client.open", "Connected");
     this.emit("open");
   }
 
   protected onerror(e: ErrorEvent) {
+    console.error("WebSocket error occurred:", e);
+    console.error("Error message:", e.message);
+    console.error("Error type:", e.type);
+    this._status = "disconnected";
     this.log("server.error", e.message);
     this.emit("error", e);
   }
 
   protected onclose(e: CloseEvent) {
+    console.warn("WebSocket connection closed:", {
+      code: e.code,
+      reason: e.reason,
+      wasClean: e.wasClean,
+      type: e.type
+    });
+    
+    // Common close codes and their meanings
+    const closeCodes: { [key: number]: string } = {
+      1000: "Normal closure",
+      1001: "Going away",
+      1002: "Protocol error", 
+      1003: "Unsupported data",
+      1004: "Reserved",
+      1005: "No status received",
+      1006: "Abnormal closure",
+      1007: "Invalid frame payload data",
+      1008: "Policy violation",
+      1009: "Message too big",
+      1010: "Mandatory extension",
+      1011: "Internal server error",
+      1012: "Service restart",
+      1013: "Try again later",
+      1014: "Bad gateway",
+      1015: "TLS handshake"
+    };
+    
+    console.warn("Close code meaning:", closeCodes[e.code] || "Unknown");
+    
+    this._status = "disconnected";
     this.log(
       `server.close`,
-      `disconnected ${e.reason ? `with reason: ${e.reason}` : ``}`
+      `disconnected ${e.reason ? `with reason: ${e.reason}` : ``} (code: ${e.code})`
     );
     this.emit("close", e);
   }
@@ -362,17 +451,30 @@ export class GenAILiveClient extends EventEmitter<LiveClientEventTypes> {
    * send realtimeInput, this is base64 chunks of "audio/pcm" and/or "image/jpg"
    */
   sendRealtimeInput(chunks: Array<{ mimeType: string; data: string }>) {
+    // Check if we have an active connection before sending
+    if (!this.session || this.status !== "connected") {
+      this.log(`client.realtimeInput`, `Cannot send - connection status: ${this.status}`);
+      return;
+    }
+
     let hasAudio = false;
     let hasVideo = false;
     for (const ch of chunks) {
-      this.session?.sendRealtimeInput({ media: ch });
-      if (ch.mimeType.includes("audio")) {
-        hasAudio = true;
-      }
-      if (ch.mimeType.includes("image")) {
-        hasVideo = true;
-      }
-      if (hasAudio && hasVideo) {
+      try {
+        this.session.sendRealtimeInput({ media: ch });
+        if (ch.mimeType.includes("audio")) {
+          hasAudio = true;
+        }
+        if (ch.mimeType.includes("image")) {
+          hasVideo = true;
+        }
+        if (hasAudio && hasVideo) {
+          break;
+        }
+      } catch (error) {
+        this.log(`client.realtimeInput`, `Error sending chunk: ${error}`);
+        // If sending fails, the connection might have been lost
+        this._status = "disconnected";
         break;
       }
     }
@@ -391,14 +493,24 @@ export class GenAILiveClient extends EventEmitter<LiveClientEventTypes> {
    *  send a response to a function call and provide the id of the functions you are responding to
    */
   sendToolResponse(toolResponse: LiveClientToolResponse) {
+    if (!this.session || this.status !== "connected") {
+      this.log(`client.toolResponse`, `Cannot send - connection status: ${this.status}`);
+      return;
+    }
+
     if (
       toolResponse.functionResponses &&
       toolResponse.functionResponses.length
     ) {
-      this.session?.sendToolResponse({
-        functionResponses: toolResponse.functionResponses,
-      });
-      this.log(`client.toolResponse`, toolResponse);
+      try {
+        this.session.sendToolResponse({
+          functionResponses: toolResponse.functionResponses,
+        });
+        this.log(`client.toolResponse`, toolResponse);
+      } catch (error) {
+        this.log(`client.toolResponse`, `Error sending tool response: ${error}`);
+        this._status = "disconnected";
+      }
     }
   }
 
@@ -406,12 +518,22 @@ export class GenAILiveClient extends EventEmitter<LiveClientEventTypes> {
    * send normal content parts such as { text }
    */
   send(parts: Part | Part[], turnComplete: boolean = true) {
+    if (!this.session || this.status !== "connected") {
+      this.log(`client.send`, `Cannot send - connection status: ${this.status}`);
+      return;
+    }
+
     const partsArray = Array.isArray(parts) ? parts : [parts];
-    this.session?.sendClientContent({ turns: partsArray, turnComplete });
-    this.log(`client.send`, {
-      turns: partsArray,
-      turnComplete,
-    });
+    try {
+      this.session.sendClientContent({ turns: partsArray, turnComplete });
+      this.log(`client.send`, {
+        turns: partsArray,
+        turnComplete,
+      });
+    } catch (error) {
+      this.log(`client.send`, `Error sending content: ${error}`);
+      this._status = "disconnected";
+    }
     
     // Note: User message emission is now handled by inputTranscription
     // to ensure we capture the actual transcribed text from speech

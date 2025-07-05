@@ -232,7 +232,7 @@ export const UserSettingsDialog: React.FC<UserSettingsDialogProps> = ({
                         API Key Required
                       </h3>
                       <p className="text-primary-700 text-sm mb-3">
-                        To use MyGenKit, you need to provide your Google AI API key. 
+                        To use myGenKit, you need to provide your Google AI API key. 
                         Your key will be encrypted and stored securely with your account.
                       </p>
                       <p className="text-primary-600 text-xs">

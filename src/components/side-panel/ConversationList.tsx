@@ -126,17 +126,18 @@ export default function ConversationList({ className = '' }: ConversationListPro
             .map((conversation: ConversationSummary) => (
                               <Card 
                 key={conversation.id}
-                className={`w-full max-w-full cursor-pointer transition-all duration-200 hover:shadow-md group ${
+                className={`w-full max-w-full transition-all duration-200 hover:shadow-md group ${
                   currentConversationId === conversation.id 
                     ? 'ring-2 ring-primary border-primary' 
                     : 'hover:border-default-300'
                 }`}
-                isPressable
-                onPress={() => handleSwitchConversation(conversation.id)}
               >
                 <CardBody className="p-3 w-full max-w-full">
                   <div className="flex justify-between items-start gap-2 w-full max-w-full">
-                    <div className="flex-1 min-w-0 overflow-hidden">
+                    <div 
+                      className="flex-1 min-w-0 overflow-hidden cursor-pointer"
+                      onClick={() => handleSwitchConversation(conversation.id)}
+                    >
                       <h4 className="font-medium text-sm text-foreground truncate">
                         {conversation.title}
                       </h4>
@@ -161,7 +162,6 @@ export default function ConversationList({ className = '' }: ConversationListPro
                             size="sm"
                             variant="light"
                             className="opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={(e) => e.stopPropagation()}
                             aria-label="Conversation options"
                           >
                             <RiMoreLine size={16} />

@@ -51,7 +51,7 @@ export const APIProviderWrapper: React.FC<APIProviderWrapperProps> = ({ children
               <div className="text-4xl">🔑</div>
               <h2 className="text-xl font-bold">API Key Required</h2>
               <p className="text-sm text-default-500">
-                To use MyGenKit, you need to provide your own Google AI API key. 
+                To use myGenKit, you need to provide your own Google AI API key. 
                 Your key will be encrypted and stored locally on your device.
               </p>
               {secureSettings.isAutoUnlocked && (
