@@ -5,6 +5,7 @@ import { AudioStreamer } from "../lib/audio-streamer";
 import { audioContext } from "../lib/utils";
 import VolMeterWorket from "../lib/worklets/vol-meter";
 import { LiveConnectConfig } from "@google/genai";
+import { useConversationStore } from "../lib/store-conversation";
 
 export type UseLiveAPIResults = {
   client: GenAILiveClient;
@@ -22,6 +23,7 @@ export type UseLiveAPIResults = {
 export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
   const client = useMemo(() => new GenAILiveClient(options), [options]);
   const audioStreamerRef = useRef<AudioStreamer | null>(null);
+  const { addMessageToCurrentConversation } = useConversationStore();
 
   const [model, setModel] = useState<string>("models/gemini-2.0-flash-exp");
   const [config, setConfig] = useState<LiveConnectConfig>({});
@@ -62,12 +64,23 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
     const onAudio = (data: ArrayBuffer) =>
       audioStreamerRef.current?.addPCM16(new Uint8Array(data));
 
+    // Add conversation message handlers
+    const onConversationUserMessage = (message: any) => {
+      addMessageToCurrentConversation(message);
+    };
+
+    const onConversationModelMessage = (message: any) => {
+      addMessageToCurrentConversation(message);
+    };
+
     client
       .on("error", onError)
       .on("open", onOpen)
       .on("close", onClose)
       .on("interrupted", stopAudioStreamer)
-      .on("audio", onAudio);
+      .on("audio", onAudio)
+      .on("conversationUserMessage", onConversationUserMessage)
+      .on("conversationModelMessage", onConversationModelMessage);
 
     return () => {
       client
@@ -76,9 +89,11 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
         .off("close", onClose)
         .off("interrupted", stopAudioStreamer)
         .off("audio", onAudio)
+        .off("conversationUserMessage", onConversationUserMessage)
+        .off("conversationModelMessage", onConversationModelMessage)
         .disconnect();
     };
-  }, [client]);
+  }, [client, addMessageToCurrentConversation]);
 
   const connect = useCallback(async () => {
     if (!config) {

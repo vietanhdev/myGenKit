@@ -47,6 +47,9 @@ function AltairComponent() {
         { googleSearch: {} },
         { functionDeclarations: [declaration] },
       ],
+      // Enable transcription for both input and output audio
+      inputAudioTranscription: {},
+      outputAudioTranscription: {},
     });
   }, [setConfig, setModel]);
 

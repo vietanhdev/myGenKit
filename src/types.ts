@@ -26,3 +26,38 @@ export type ClientContentLog = {
   turns: Part[];
   turnComplete: boolean;
 };
+
+/** conversation types */
+export type Conversation = {
+  id: string;
+  title: string;
+  createdAt: Date;
+  lastModified: Date;
+  messages: StreamingLog[];
+};
+
+export type ConversationSummary = {
+  id: string;
+  title: string;
+  createdAt: Date;
+  lastModified: Date;
+  messageCount: number;
+  lastMessage?: string;
+};
+
+/** clean conversation message types */
+export type ConversationMessage = {
+  id: string;
+  role: 'user' | 'model';
+  content: string;
+  timestamp: Date;
+  rawData?: StreamingLog; // Keep reference to original log for debugging
+};
+
+export type CleanConversation = {
+  id: string;
+  title: string;
+  createdAt: Date;
+  lastModified: Date;
+  messages: ConversationMessage[];
+};

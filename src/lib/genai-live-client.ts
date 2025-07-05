@@ -46,6 +46,9 @@ export interface LiveClientEventTypes {
   ) => void;
   // Emitted when the current turn is complete
   turncomplete: () => void;
+  // New events for clean conversation messages
+  conversationUserMessage: (message: StreamingLog) => void;
+  conversationModelMessage: (message: StreamingLog) => void;
 }
 
 /**
@@ -73,6 +76,12 @@ export class GenAILiveClient extends EventEmitter<LiveClientEventTypes> {
 
   protected config: LiveConnectConfig | null = null;
 
+  // Message buffering for joining transcription events
+  private currentUserMessage: string = "";
+  private currentModelMessage: string = "";
+  private userMessageStartTime: Date | null = null;
+  private modelMessageStartTime: Date | null = null;
+
   public getConfig() {
     return { ...this.config };
   }
@@ -94,6 +103,88 @@ export class GenAILiveClient extends EventEmitter<LiveClientEventTypes> {
       message,
     };
     this.emit("log", log);
+  }
+
+  /**
+   * Extract text content from message parts
+   */
+  private extractTextFromParts(parts: Part[]): string {
+    return parts
+      .filter(part => part.text && part.text.trim().length > 0)
+      .map(part => part.text?.trim())
+      .join(' ')
+      .trim();
+  }
+
+  /**
+   * Flush buffered messages when turn is complete
+   */
+  private flushBufferedMessages() {
+    // Flush user message if we have buffered content
+    if (this.currentUserMessage.trim() && this.userMessageStartTime) {
+      const userMessage: StreamingLog = {
+        date: this.userMessageStartTime,
+        type: "conversation.user",
+        message: {
+          turns: [{ text: this.currentUserMessage.trim() }],
+          turnComplete: true
+        }
+      };
+      this.emit("conversationUserMessage", userMessage);
+      
+      // Reset user message buffer
+      this.currentUserMessage = "";
+      this.userMessageStartTime = null;
+    }
+    
+    // Flush model message if we have buffered content
+    if (this.currentModelMessage.trim() && this.modelMessageStartTime) {
+      const modelMessage: StreamingLog = {
+        date: this.modelMessageStartTime,
+        type: "conversation.model",
+        message: {
+          serverContent: {
+            modelTurn: {
+              parts: [{ text: this.currentModelMessage.trim() }]
+            }
+          }
+        }
+      };
+      this.emit("conversationModelMessage", modelMessage);
+      
+      // Reset model message buffer
+      this.currentModelMessage = "";
+      this.modelMessageStartTime = null;
+    }
+  }
+
+  /**
+   * Emit clean conversation message for user input (deprecated - now handled by transcription)
+   */
+  private emitUserMessage(parts: Part[], turnComplete: boolean) {
+    // This method is now deprecated as user messages are handled by input transcription
+    // which provides more accurate text from speech-to-text processing
+  }
+
+  /**
+   * Emit clean conversation message for model response
+   */
+  private emitModelMessage(parts: Part[]) {
+    const textContent = this.extractTextFromParts(parts);
+    if (textContent) {
+      const conversationMessage: StreamingLog = {
+        date: new Date(),
+        type: "conversation.model",
+        message: {
+          serverContent: {
+            modelTurn: {
+              parts: parts.filter(part => part.text && part.text.trim().length > 0)
+            }
+          }
+        }
+      };
+      this.emit("conversationModelMessage", conversationMessage);
+    }
   }
 
   async connect(model: string, config: LiveConnectConfig): Promise<boolean> {
@@ -132,6 +223,10 @@ export class GenAILiveClient extends EventEmitter<LiveClientEventTypes> {
     if (!this.session) {
       return false;
     }
+    
+    // Flush any buffered messages before disconnecting
+    this.flushBufferedMessages();
+    
     this.session?.close();
     this._session = null;
     this._status = "disconnected";
@@ -182,11 +277,47 @@ export class GenAILiveClient extends EventEmitter<LiveClientEventTypes> {
       if ("interrupted" in serverContent) {
         this.log("server.content", "interrupted");
         this.emit("interrupted");
+        
+        // Flush any buffered messages when interrupted
+        this.flushBufferedMessages();
         return;
       }
       if ("turnComplete" in serverContent) {
         this.log("server.content", "turnComplete");
         this.emit("turncomplete");
+        
+        // Flush buffered messages on turn complete
+        this.flushBufferedMessages();
+      }
+
+      // Handle input transcription (user speech-to-text) - buffer until turn complete
+      if ("inputTranscription" in serverContent && serverContent.inputTranscription?.text) {
+        const transcriptionText = serverContent.inputTranscription.text;
+        
+        // Initialize start time if this is the first chunk
+        if (!this.userMessageStartTime) {
+          this.userMessageStartTime = new Date();
+          this.currentUserMessage = "";
+        }
+        
+        // Add to current message buffer (transcription already includes proper spacing)
+        this.currentUserMessage += transcriptionText;
+        this.log("server.inputTranscription", transcriptionText);
+      }
+
+      // Handle output transcription (model text-to-speech) - buffer until turn complete
+      if ("outputTranscription" in serverContent && serverContent.outputTranscription?.text) {
+        const transcriptionText = serverContent.outputTranscription.text;
+        
+        // Initialize start time if this is the first chunk
+        if (!this.modelMessageStartTime) {
+          this.modelMessageStartTime = new Date();
+          this.currentModelMessage = "";
+        }
+        
+        // Add to current message buffer (transcription already includes proper spacing)
+        this.currentModelMessage += transcriptionText;
+        this.log("server.outputTranscription", transcriptionText);
       }
 
       if ("modelTurn" in serverContent) {
@@ -218,6 +349,9 @@ export class GenAILiveClient extends EventEmitter<LiveClientEventTypes> {
         const content: { modelTurn: Content } = { modelTurn: { parts } };
         this.emit("content", content);
         this.log(`server.content`, message);
+        
+        // Emit clean conversation message for model response (text parts only)
+        this.emitModelMessage(parts);
       }
     } else {
       console.log("received unmatched message", message);
@@ -272,10 +406,14 @@ export class GenAILiveClient extends EventEmitter<LiveClientEventTypes> {
    * send normal content parts such as { text }
    */
   send(parts: Part | Part[], turnComplete: boolean = true) {
-    this.session?.sendClientContent({ turns: parts, turnComplete });
+    const partsArray = Array.isArray(parts) ? parts : [parts];
+    this.session?.sendClientContent({ turns: partsArray, turnComplete });
     this.log(`client.send`, {
-      turns: Array.isArray(parts) ? parts : [parts],
+      turns: partsArray,
       turnComplete,
     });
+    
+    // Note: User message emission is now handled by inputTranscription
+    // to ensure we capture the actual transcribed text from speech
   }
 }

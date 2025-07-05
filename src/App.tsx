@@ -27,7 +27,9 @@ function App() {
           {isLoaded && <BackgroundVisual3D config={visualizationConfig} />}
           
           <div className="app-container">
-            <SidePanel />
+            <div className="bg-background">
+              <SidePanel />
+            </div>
             <main>
               <div className="main-app-area">
                 {/* APP goes here */}
