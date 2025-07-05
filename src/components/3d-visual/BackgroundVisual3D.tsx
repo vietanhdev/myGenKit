@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import Visual3D from './Visual3D';
+import FullVisual3D from './FullVisual3D';
 import CSSVisualizer from './CSSVisualizer';
 import JarvisVisualizer from './JarvisVisualizer';
 import { VisualizationConfig } from '../settings-dialog/VisualizationSettings';
+import { useSidebarWidth } from '../../hooks/use-sidebar-width';
 import './visualization-container.scss';
 
 interface BackgroundVisual3DProps {
@@ -13,6 +15,7 @@ const BackgroundVisual3D: React.FC<BackgroundVisual3DProps> = ({ config }) => {
   // Use a key to force remount when visualization type changes
   const [visualizationKey, setVisualizationKey] = useState(0);
   const [previousType, setPreviousType] = useState(config.type);
+  const { sidebarWidth } = useSidebarWidth();
 
   // Reinitialize when visualization type changes
   useEffect(() => {
@@ -51,6 +54,15 @@ const BackgroundVisual3D: React.FC<BackgroundVisual3DProps> = ({ config }) => {
           />
         );
         
+      case '3d-full':
+        return (
+          <FullVisual3D 
+            key={`3d-full-${visualizationKey}`}
+            opacity={config.opacity}
+            blur={false} // Disable blur for better performance
+          />
+        );
+        
       case 'jarvis':
         return (
           <JarvisVisualizer 
@@ -73,7 +85,16 @@ const BackgroundVisual3D: React.FC<BackgroundVisual3DProps> = ({ config }) => {
   };
 
   return (
-    <div className="background-visualization-container">
+    <div 
+      className={`background-visualization-container ${(config.type === 'jarvis' || config.type === '3d-full') ? 'right-side-container' : ''}`}
+      style={{
+        // For Jarvis and Full 3D visualizations, position to the right of the sidebar
+        ...((config.type === 'jarvis' || config.type === '3d-full') && {
+          left: `${sidebarWidth}px`,
+          width: `calc(100% - ${sidebarWidth}px)`
+        })
+      }}
+    >
       {renderVisualization()}
     </div>
   );

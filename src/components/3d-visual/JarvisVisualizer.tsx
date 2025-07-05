@@ -19,13 +19,13 @@ const JarvisVisualizer: React.FC<JarvisVisualizerProps> = ({
   const analyserRef = useRef<AnalyserNode>();
   const dataArrayRef = useRef<Uint8Array>();
 
-  // Color schemes for different JARVIS modes
+  // Color schemes for different JARVIS modes - brighter and more vibrant
   const colorSchemes = {
-    blue: { primary: '#00bfff', secondary: '#0080ff', accent: '#40e0ff' },
-    cyan: { primary: '#00ffff', secondary: '#20b2aa', accent: '#afeeee' },
-    green: { primary: '#00ff41', secondary: '#32cd32', accent: '#98fb98' },
-    purple: { primary: '#8a2be2', secondary: '#9932cc', accent: '#da70d6' },
-    gold: { primary: '#ffd700', secondary: '#ffb347', accent: '#fff8dc' }
+    blue: { primary: '#00d4ff', secondary: '#0099ff', accent: '#66e6ff' },
+    cyan: { primary: '#00ffff', secondary: '#33cccc', accent: '#ccffff' },
+    green: { primary: '#00ff55', secondary: '#44ff44', accent: '#aaffaa' },
+    purple: { primary: '#aa44ff', secondary: '#bb55ff', accent: '#ddaaff' },
+    gold: { primary: '#ffdd00', secondary: '#ffcc33', accent: '#ffeeaa' }
   };
 
   const currentScheme = colorSchemes[color];
@@ -75,58 +75,65 @@ const JarvisVisualizer: React.FC<JarvisVisualizerProps> = ({
     const segments = 32;
     const segmentAngle = (Math.PI * 2) / segments;
     
-    for (let i = 0; i < segments; i++) {
-      const dataIndex = Math.floor((i / segments) * audioData.length);
-      const amplitude = audioData[dataIndex] / 255;
-      const angle = i * segmentAngle;
-      
-      // Outer arc
-      const outerRadius = radius + amplitude * 30;
-      const startAngle = angle - segmentAngle * 0.4;
-      const endAngle = angle + segmentAngle * 0.4;
-      
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, outerRadius, startAngle, endAngle);
-      ctx.strokeStyle = `${currentScheme.primary}${Math.floor(amplitude * 255).toString(16).padStart(2, '0')}`;
-      ctx.lineWidth = 3;
-      ctx.stroke();
-      
-      // Inner pulsing arcs
-      if (amplitude > 0.1) {
+          for (let i = 0; i < segments; i++) {
+        const dataIndex = Math.floor((i / segments) * audioData.length);
+        // More stable light - base at 70%, only vary 20-30%
+        const baseLevel = 0.7;
+        const audioInfluence = (audioData[dataIndex] / 255) * 0.3; // Max 30% variation
+        const amplitude = Math.min(1.0, baseLevel + audioInfluence);
+        const angle = i * segmentAngle;
+        
+        // Outer arc - brighter and more stable
+        const outerRadius = radius + amplitude * 25; // Reduced radius variation
+        const startAngle = angle - segmentAngle * 0.4;
+        const endAngle = angle + segmentAngle * 0.4;
+        
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, outerRadius, startAngle, endAngle);
+        // Much brighter with higher minimum opacity
+        const primaryOpacity = Math.floor((0.8 + amplitude * 0.2) * 255).toString(16).padStart(2, '0');
+        ctx.strokeStyle = `${currentScheme.primary}${primaryOpacity}`;
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        
+        // Inner pulsing arcs - brighter and more stable
         ctx.beginPath();
         ctx.arc(centerX, centerY, radius - 20, startAngle, endAngle);
-        ctx.strokeStyle = `${currentScheme.accent}${Math.floor(amplitude * 128).toString(16).padStart(2, '0')}`;
+        const accentOpacity = Math.floor((0.6 + amplitude * 0.4) * 255).toString(16).padStart(2, '0');
+        ctx.strokeStyle = `${currentScheme.accent}${accentOpacity}`;
         ctx.lineWidth = 2;
         ctx.stroke();
       }
-    }
   }, [currentScheme]);
 
   // Draw data streams
   const drawDataStreams = useCallback((ctx: CanvasRenderingContext2D, width: number, height: number, audioData: Uint8Array, time: number) => {
     const streams = 6;
-    for (let i = 0; i < streams; i++) {
-      const x = (i / streams) * width;
-      const dataIndex = Math.floor((i / streams) * audioData.length);
-      const amplitude = audioData[dataIndex] / 255;
-      
-      // Vertical data streams
-      ctx.beginPath();
-      ctx.moveTo(x, height);
-      ctx.lineTo(x, height - amplitude * height * 0.8);
-      ctx.strokeStyle = `${currentScheme.secondary}${Math.floor(amplitude * 200).toString(16).padStart(2, '0')}`;
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      
-      // Flowing particles
-      const particleY = height - (time * 0.1 + i * 100) % height;
-      if (amplitude > 0.2) {
+          for (let i = 0; i < streams; i++) {
+        const x = (i / streams) * width;
+        const dataIndex = Math.floor((i / streams) * audioData.length);
+        // More stable data streams - base at 65%, only vary 25%
+        const baseLevel = 0.65;
+        const audioInfluence = (audioData[dataIndex] / 255) * 0.25; // Max 25% variation
+        const amplitude = Math.min(1.0, baseLevel + audioInfluence);
+        
+        // Vertical data streams - brighter and more stable
+        ctx.beginPath();
+        ctx.moveTo(x, height);
+        ctx.lineTo(x, height - amplitude * height * 0.75); // Slightly reduced height variation
+        const streamOpacity = Math.floor((0.7 + amplitude * 0.3) * 255).toString(16).padStart(2, '0');
+        ctx.strokeStyle = `${currentScheme.secondary}${streamOpacity}`;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // Flowing particles - brighter and more consistent
+        const particleY = height - (time * 0.08 + i * 100) % height; // Slightly slower flow
         ctx.beginPath();
         ctx.arc(x, particleY, 2, 0, Math.PI * 2);
-        ctx.fillStyle = currentScheme.accent;
+        const particleOpacity = Math.floor((0.75 + amplitude * 0.25) * 255).toString(16).padStart(2, '0');
+        ctx.fillStyle = `${currentScheme.accent}${particleOpacity}`;
         ctx.fill();
       }
-    }
   }, [currentScheme]);
 
   // Draw HUD elements
@@ -177,7 +184,7 @@ const JarvisVisualizer: React.FC<JarvisVisualizerProps> = ({
   // Main animation loop
   const animate = useCallback(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !analyserRef.current || !dataArrayRef.current) {
+    if (!canvas) {
       animationRef.current = requestAnimationFrame(animate);
       return;
     }
@@ -185,8 +192,20 @@ const JarvisVisualizer: React.FC<JarvisVisualizerProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Get audio data
-    analyserRef.current.getByteFrequencyData(dataArrayRef.current);
+    // Create baseline audio data if no audio analyzer available
+    const mockAudioData = new Uint8Array(128);
+    for (let i = 0; i < mockAudioData.length; i++) {
+      // Generate stable baseline activity with minimal variation
+      mockAudioData[i] = Math.floor(180 + Math.sin(Date.now() * 0.0005 + i * 0.05) * 15);
+    }
+
+    // Get audio data or use baseline
+    const audioData = analyserRef.current && dataArrayRef.current ? 
+      (() => {
+        analyserRef.current!.getByteFrequencyData(dataArrayRef.current!);
+        return dataArrayRef.current!;
+      })() : 
+      mockAudioData;
     
     const width = canvas.width;
     const height = canvas.height;
@@ -196,34 +215,34 @@ const JarvisVisualizer: React.FC<JarvisVisualizerProps> = ({
     ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
     ctx.fillRect(0, 0, width, height);
     
-    // Apply glow effect
+    // Apply stronger glow effect for brighter appearance
     ctx.shadowColor = currentScheme.primary;
-    ctx.shadowBlur = 10;
+    ctx.shadowBlur = 15;
     
     // Draw main circular visualizer
     const centerX = width / 2;
     const centerY = height / 2;
     const baseRadius = Math.min(width, height) * 0.15;
     
-    drawCircularArcs(ctx, centerX, centerY, baseRadius, dataArrayRef.current, time);
+    drawCircularArcs(ctx, centerX, centerY, baseRadius, audioData, time);
     
     // Draw secondary arcs
     if (intensity !== 'low') {
-      drawCircularArcs(ctx, centerX, centerY, baseRadius * 1.5, dataArrayRef.current, time);
+      drawCircularArcs(ctx, centerX, centerY, baseRadius * 1.5, audioData, time);
     }
     
     if (intensity === 'high') {
-      drawCircularArcs(ctx, centerX, centerY, baseRadius * 2, dataArrayRef.current, time);
+      drawCircularArcs(ctx, centerX, centerY, baseRadius * 2, audioData, time);
     }
     
     // Reset shadow
     ctx.shadowBlur = 0;
     
     // Draw data streams
-    drawDataStreams(ctx, width, height, dataArrayRef.current, time);
+    drawDataStreams(ctx, width, height, audioData, time);
     
     // Draw HUD elements
-    drawHUDElements(ctx, width, height, dataArrayRef.current, time);
+    drawHUDElements(ctx, width, height, audioData, time);
     
     animationRef.current = requestAnimationFrame(animate);
   }, [intensity, drawCircularArcs, drawDataStreams, drawHUDElements, currentScheme]);
@@ -245,17 +264,42 @@ const JarvisVisualizer: React.FC<JarvisVisualizerProps> = ({
     if (!canvas) return;
 
     const resizeCanvas = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      // Size canvas to container size (which is positioned to the right of sidebar)
+      const container = canvas.parentElement;
+      if (container) {
+        canvas.width = container.clientWidth;
+        canvas.height = container.clientHeight;
+      } else {
+        // Fallback to right half of screen
+        canvas.width = window.innerWidth * 0.5;
+        canvas.height = window.innerHeight;
+      }
     };
 
     resizeCanvas();
+    
+    // Listen for window resize and sidebar changes
     window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('sidebar-width-change', resizeCanvas);
+    window.addEventListener('sidebar-toggle', resizeCanvas);
+    
+    // Use ResizeObserver to detect container size changes
+    const resizeObserver = new ResizeObserver(() => {
+      resizeCanvas();
+    });
+    
+    const container = canvas.parentElement;
+    if (container) {
+      resizeObserver.observe(container);
+    }
     
     animate();
 
     return () => {
       window.removeEventListener('resize', resizeCanvas);
+      window.removeEventListener('sidebar-width-change', resizeCanvas);
+      window.removeEventListener('sidebar-toggle', resizeCanvas);
+      resizeObserver.disconnect();
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }

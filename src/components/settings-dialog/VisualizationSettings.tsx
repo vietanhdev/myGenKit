@@ -2,7 +2,7 @@ import React from 'react';
 import { Switch, Card, CardBody, Button, Slider, Chip, Divider, RadioGroup, Radio, ButtonGroup } from '@heroui/react';
 
 export interface VisualizationConfig {
-  type: 'none' | 'css' | '3d-light' | 'jarvis';
+  type: 'none' | 'css' | '3d-light' | '3d-full' | 'jarvis';
   intensity: 'low' | 'medium' | 'high';
   opacity: number;
   color: 'blue' | 'cyan' | 'green' | 'purple' | 'gold';
@@ -26,7 +26,8 @@ const VisualizationSettings: React.FC<VisualizationSettingsProps> = ({
   const visualizationTypes = [
     { value: 'none', label: 'None', description: 'No visualization' },
     { value: 'css', label: 'Bars', description: 'CSS bars' },
-    { value: '3d-light', label: '3D Light', description: '3D spheres' },
+    { value: '3d-light', label: '3D Light', description: 'Lightweight 3D' },
+    { value: '3d-full', label: '3D Full', description: 'Full 3D with effects' },
     { value: 'jarvis', label: 'JARVIS', description: 'HUD style' }
   ];
 

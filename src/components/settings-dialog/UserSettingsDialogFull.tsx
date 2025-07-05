@@ -44,7 +44,7 @@ const defaultConfig: LiveConnectConfig = {
 };
 
 const defaultVisualizationConfig: VisualizationConfig = {
-  type: 'css',
+  type: '3d-full',
   intensity: 'medium',
   opacity: 0.3,
   color: 'blue',

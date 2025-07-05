@@ -68,11 +68,22 @@ export class GdmLiveAudioVisuals3D extends LitElement {
       position: absolute;
       inset: 0;
       image-rendering: pixelated;
+      object-fit: contain; /* Ensure the canvas maintains aspect ratio */
     }
   `;
 
   connectedCallback() {
     super.connectedCallback();
+  }
+
+  private generateMockAudioData(): number[] {
+    const time = performance.now() * 0.001;
+    return [
+      Math.sin(time * 0.5) * 60 + 80,  // Base level around 80 with variation
+      Math.sin(time * 0.3) * 40 + 60,  // Mid frequencies
+      Math.sin(time * 0.7) * 30 + 50,  // High frequencies
+      Math.sin(time * 0.2) * 20 + 40   // Additional data
+    ];
   }
 
   private init() {
@@ -97,7 +108,7 @@ export class GdmLiveAudioVisuals3D extends LitElement {
 
     const camera = new THREE.PerspectiveCamera(
       75,
-      window.innerWidth / window.innerHeight,
+      1.0, // Force 1:1 aspect ratio for perfect sphere
       0.1,
       1000,
     );
@@ -108,7 +119,12 @@ export class GdmLiveAudioVisuals3D extends LitElement {
       canvas: this.canvas,
       antialias: !true,
     });
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    // Use square dimensions for perfect sphere aspect ratio
+    const containerWidth = this.clientWidth || window.innerWidth;
+    const containerHeight = this.clientHeight || window.innerHeight;
+    const size = Math.min(containerWidth, containerHeight);
+    
+    renderer.setSize(size, size);
     renderer.setPixelRatio(window.devicePixelRatio / 1);
 
     const geometry = new THREE.IcosahedronGeometry(1, 10);
@@ -150,7 +166,7 @@ export class GdmLiveAudioVisuals3D extends LitElement {
     const renderPass = new RenderPass(scene, camera);
 
     const bloomPass = new UnrealBloomPass(
-      new THREE.Vector2(window.innerWidth, window.innerHeight),
+      new THREE.Vector2(size, size),
       5,
       0.5,
       0,
@@ -164,21 +180,31 @@ export class GdmLiveAudioVisuals3D extends LitElement {
     composer.addPass(bloomPass);
 
     this.composer = composer;
+    
+    // Set initial composer size to square
+    composer.setSize(size, size);
 
-    function onWindowResize() {
-      camera.aspect = window.innerWidth / window.innerHeight;
+    const onWindowResize = () => {
+      // Use container dimensions instead of full window
+      const containerWidth = this.clientWidth || window.innerWidth;
+      const containerHeight = this.clientHeight || window.innerHeight;
+      
+      // Force 1:1 aspect ratio for perfect sphere
+      camera.aspect = 1.0;
       camera.updateProjectionMatrix();
+      
+      // Use square dimensions for rendering
+      const size = Math.min(containerWidth, containerHeight);
       const dPR = renderer.getPixelRatio();
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      backdrop.material.uniforms.resolution.value.set(w * dPR, h * dPR);
-      renderer.setSize(w, h);
-      composer.setSize(w, h);
+      
+      backdrop.material.uniforms.resolution.value.set(size * dPR, size * dPR);
+      renderer.setSize(size, size);
+      composer.setSize(size, size);
       fxaaPass.material.uniforms['resolution'].value.set(
-        1 / (w * dPR),
-        1 / (h * dPR),
+        1 / (size * dPR),
+        1 / (size * dPR),
       );
-    }
+    };
 
     window.addEventListener('resize', onWindowResize);
     onWindowResize();
@@ -189,8 +215,13 @@ export class GdmLiveAudioVisuals3D extends LitElement {
   private animation() {
     requestAnimationFrame(() => this.animation());
 
-    this.inputAnalyser.update();
-    this.outputAnalyser.update();
+    // Only update analyzers if they exist
+    if (this.inputAnalyser) {
+      this.inputAnalyser.update();
+    }
+    if (this.outputAnalyser) {
+      this.outputAnalyser.update();
+    }
 
     const t = performance.now();
     const dt = (t - this.prevTime) / (1000 / 60);
@@ -201,15 +232,19 @@ export class GdmLiveAudioVisuals3D extends LitElement {
     backdropMaterial.uniforms.rand.value = Math.random() * 10000;
 
     if (sphereMaterial.userData.shader) {
+      // Use default values if analyzers don't exist yet, or generate mock data
+      const outputData = this.outputAnalyser?.data || this.generateMockAudioData();
+      const inputData = this.inputAnalyser?.data || this.generateMockAudioData();
+
       this.sphere.scale.setScalar(
-        1 + (0.2 * this.outputAnalyser.data[1]) / 255,
+        1 + (0.2 * outputData[1]) / 255,
       );
 
       const f = 0.001;
-      this.rotation.x += (dt * f * 0.5 * this.outputAnalyser.data[1]) / 255;
-      this.rotation.z += (dt * f * 0.5 * this.inputAnalyser.data[1]) / 255;
-      this.rotation.y += (dt * f * 0.25 * this.inputAnalyser.data[2]) / 255;
-      this.rotation.y += (dt * f * 0.25 * this.outputAnalyser.data[2]) / 255;
+      this.rotation.x += (dt * f * 0.5 * outputData[1]) / 255;
+      this.rotation.z += (dt * f * 0.5 * inputData[1]) / 255;
+      this.rotation.y += (dt * f * 0.25 * inputData[2]) / 255;
+      this.rotation.y += (dt * f * 0.25 * outputData[2]) / 255;
 
       const euler = new THREE.Euler(
         this.rotation.x,
@@ -223,17 +258,17 @@ export class GdmLiveAudioVisuals3D extends LitElement {
       this.camera.lookAt(this.sphere.position);
 
       sphereMaterial.userData.shader.uniforms.time.value +=
-        (dt * 0.1 * this.outputAnalyser.data[0]) / 255;
+        (dt * 0.1 * outputData[0]) / 255;
       sphereMaterial.userData.shader.uniforms.inputData.value.set(
-        (1 * this.inputAnalyser.data[0]) / 255,
-        (0.1 * this.inputAnalyser.data[1]) / 255,
-        (10 * this.inputAnalyser.data[2]) / 255,
+        (1 * inputData[0]) / 255,
+        (0.1 * inputData[1]) / 255,
+        (10 * inputData[2]) / 255,
         0,
       );
       sphereMaterial.userData.shader.uniforms.outputData.value.set(
-        (2 * this.outputAnalyser.data[0]) / 255,
-        (0.1 * this.outputAnalyser.data[1]) / 255,
-        (10 * this.outputAnalyser.data[2]) / 255,
+        (2 * outputData[0]) / 255,
+        (0.1 * outputData[1]) / 255,
+        (10 * outputData[2]) / 255,
         0,
       );
     }

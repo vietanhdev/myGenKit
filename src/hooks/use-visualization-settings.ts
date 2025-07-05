@@ -4,7 +4,7 @@ import { VisualizationConfig } from '../components/settings-dialog/Visualization
 const STORAGE_KEY = 'mygenkit-visualization-settings';
 
 const defaultConfig: VisualizationConfig = {
-  type: 'css',
+  type: '3d-full',
   intensity: 'medium',
   opacity: 0.3,
   color: 'blue',
@@ -21,8 +21,26 @@ export function useVisualizationSettings() {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsedConfig = JSON.parse(saved);
-        // Merge with defaults to handle missing properties
-        setConfig({ ...defaultConfig, ...parsedConfig });
+        
+        // Migration: Force Full 3D as default for existing users
+        // If the saved config has old types, migrate to '3d-full'
+        if (parsedConfig.type === 'css' || parsedConfig.type === 'jarvis') {
+          console.log(`Migrating from ${parsedConfig.type} to Full 3D visualization`);
+          const migratedConfig = {
+            ...defaultConfig,
+            ...parsedConfig,
+            type: '3d-full',
+            opacity: 0.3 // Update opacity for Full 3D
+          };
+          setConfig(migratedConfig);
+          // Save the migrated config back to localStorage
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(migratedConfig));
+          console.log('Migration completed:', migratedConfig);
+        } else {
+          // Merge with defaults to handle missing properties
+          console.log('Using saved config:', parsedConfig);
+          setConfig({ ...defaultConfig, ...parsedConfig });
+        }
       }
     } catch (error) {
       console.warn('Failed to load visualization settings:', error);

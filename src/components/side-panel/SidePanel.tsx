@@ -90,10 +90,15 @@ export default function SidePanel() {
     setSidebarWidth(newWidth);
   }, [isResizing, dragStartX, dragStartWidth, getMaxWidth]);
 
-  // Save sidebar width to localStorage
+  // Save sidebar width to localStorage and emit events
   useEffect(() => {
     localStorage.setItem('sidebar-width', sidebarWidth.toString());
-  }, [sidebarWidth]);
+    
+    // Emit custom event for width changes
+    window.dispatchEvent(new CustomEvent('sidebar-width-change', {
+      detail: { width: sidebarWidth, isOpen: open }
+    }));
+  }, [sidebarWidth, open]);
 
   // Handle resize end
   const handleResizeEnd = useCallback(() => {
@@ -234,13 +239,21 @@ export default function SidePanel() {
               </Button>
             </>
           )}
-          <Button
-            isIconOnly
-            variant="light"
-            onPress={() => setOpen(!open)}
-            size="sm"
-            aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
-          >
+                      <Button
+              isIconOnly
+              variant="light"
+              onPress={() => {
+                const newOpenState = !open;
+                setOpen(newOpenState);
+                
+                // Emit custom event for sidebar toggle
+                window.dispatchEvent(new CustomEvent('sidebar-toggle', {
+                  detail: { isOpen: newOpenState }
+                }));
+              }}
+              size="sm"
+              aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
+            >
             {open ? (
               <RiSidebarFoldLine size={18} />
             ) : (
