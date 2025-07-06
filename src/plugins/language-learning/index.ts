@@ -214,7 +214,7 @@ export const languageLearningPlugin: PluginDefinition = {
   name: 'Language Learning',
   description: 'AI-powered language learning assistant with vocabulary management',
   version: '1.0.0',
-  author: 'MyGenKit',
+  author: 'myGenKit',
   icon: 'RiTranslate',
   
   tabComponent: LanguageLearningApp,

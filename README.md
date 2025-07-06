@@ -1,8 +1,10 @@
-<img src="./public/logo.png" width="200px"></img>
+<p align="center">
+  <img alt="AnyLabeling" style="width: 128px; height: 128px; height: auto;" src="./public/logo.png"/>
+  <h1 align="center">myGenKit</h1>
+  <p align="center">Build your own personal assistant with Gemini GenAI! Please join me to add your features!</p>
+</p>
 
-# myGenKit
-
-Build your own personal assistant with rich feature with GenAI! Please join me to add your features!
+![Screenshot](screenshot.png)
 
 Features in my vision:
 

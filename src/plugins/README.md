@@ -1,6 +1,6 @@
-# MyGenKit Plugin System
+# myGenKit Plugin System
 
-This directory contains plugins for the MyGenKit AI assistant application. The plugin system allows you to extend the functionality of the AI assistant with custom apps, tools, and UI components.
+This directory contains plugins for the myGenKit AI assistant application. The plugin system allows you to extend the functionality of the AI assistant with custom apps, tools, and UI components.
 
 ## Current Plugins
 
