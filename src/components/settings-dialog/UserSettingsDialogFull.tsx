@@ -66,6 +66,7 @@ export const UserSettingsDialogFull: React.FC<UserSettingsDialogFullProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
+  const [hasSavedSuccessfully, setHasSavedSuccessfully] = useState(false);
   
   // Password dialog for settings (only unlock mode needed)
   const [passwordDialog, setPasswordDialog] = useState<{
@@ -94,6 +95,7 @@ export const UserSettingsDialogFull: React.FC<UserSettingsDialogFullProps> = ({
       updateVisualizationConfig(defaultVisualizationConfig);
     }
     setError('');
+    setHasSavedSuccessfully(false); // Reset on dialog open/close
   }, [isOpen, userSession.currentSettings, updateVisualizationConfig]);
 
   // Check for session expiration when dialog opens
@@ -240,11 +242,16 @@ export const UserSettingsDialogFull: React.FC<UserSettingsDialogFullProps> = ({
       // Save using the stored password from login
       await userSession.saveSettings(settings, '');
       
-      // Note: LiveAPI context updates are handled by the parent provider
-      // No direct LiveAPI context manipulation needed here
+      // Mark as successfully saved
+      setHasSavedSuccessfully(true);
       
-      // Close dialog after successful save and let the service restart
+      // Close dialog first, then reload to ensure clean state
       onClose();
+      
+      // Reload page to ensure all components get fresh state with saved settings
+      setTimeout(() => {
+        window.location.reload();
+      }, 100);
       
       // The UserAPIProvider will automatically detect the new API key
       // and reinitialize the LiveAPI client
@@ -266,7 +273,7 @@ export const UserSettingsDialogFull: React.FC<UserSettingsDialogFullProps> = ({
 
 
 
-  const needsApiKey = !userSession.currentSettings?.apiKey || forceApiKey;
+  const needsApiKey = (!userSession.currentSettings?.apiKey || forceApiKey) && !hasSavedSuccessfully;
   const connected = false; // Always allow editing in this standalone component
 
   return (

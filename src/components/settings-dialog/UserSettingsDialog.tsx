@@ -44,6 +44,7 @@ export const UserSettingsDialog: React.FC<UserSettingsDialogProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
+  const [hasSavedSuccessfully, setHasSavedSuccessfully] = useState(false);
   
   // Password dialog for settings (only unlock mode needed)
   const [passwordDialog, setPasswordDialog] = useState<{
@@ -61,6 +62,7 @@ export const UserSettingsDialog: React.FC<UserSettingsDialogProps> = ({
       setModel('models/gemini-2.0-flash-exp');
     }
     setError('');
+    setHasSavedSuccessfully(false); // Reset on dialog open/close
   }, [isOpen, userSession.currentSettings]);
 
   // Check for session expiration when dialog opens
@@ -121,8 +123,18 @@ export const UserSettingsDialog: React.FC<UserSettingsDialogProps> = ({
       // Always save directly using the stored password from login
       await userSession.saveSettings(settings, ''); // Empty password - hook will use stored login password
       
-      // Close dialog after successful save
+      // Mark as successfully saved
+      setHasSavedSuccessfully(true);
+      
+      console.log('UserSettingsDialog - Settings saved successfully, reloading page to ensure proper state');
+      
+      // Close dialog first, then reload to ensure clean state
       onClose();
+      
+      // Reload page to ensure all components get fresh state with saved settings
+      setTimeout(() => {
+        window.location.reload();
+      }, 100);
     } catch (err: any) {
       console.error('Save settings error:', err);
       
@@ -144,7 +156,7 @@ export const UserSettingsDialog: React.FC<UserSettingsDialogProps> = ({
     }
   };
 
-  const needsApiKey = !userSession.currentSettings?.apiKey || forceApiKey;
+  const needsApiKey = (!userSession.currentSettings?.apiKey || forceApiKey) && !hasSavedSuccessfully;
 
   return (
     <>

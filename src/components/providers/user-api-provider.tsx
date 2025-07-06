@@ -14,10 +14,29 @@ export const UserAPIProvider: React.FC<UserAPIProviderProps> = ({ children }) =>
   const userSession = useUserSession();
   const [currentApiKey, setCurrentApiKey] = useState<string>('');
   const [isRestarting, setIsRestarting] = useState(false);
+  const [settingsDialogClosed, setSettingsDialogClosed] = useState(false);
   const { isOpen: isSettingsOpen, onOpen: onSettingsOpen, onClose: onSettingsClose } = useDisclosure();
   const { messages: toastMessages, addToast, removeToast } = useToast();
 
-  // Determine which API key to use from current user settings
+  // Simple API key detection from userSession
+  useEffect(() => {
+    const apiKey = userSession.currentSettings?.apiKey || '';
+    if (apiKey !== currentApiKey) {
+      console.log('UserAPIProvider - API key changed, updating currentApiKey');
+      setCurrentApiKey(apiKey);
+      if (apiKey) {
+        setSettingsDialogClosed(false);
+      }
+    }
+  }, [userSession.currentSettings?.apiKey, currentApiKey]);
+
+  // Simple close handler
+  const handleSettingsClose = () => {
+    setSettingsDialogClosed(true);
+    onSettingsClose();
+  };
+
+  // Handle API key changes and restart loading
   useEffect(() => {
     const newApiKey = userSession.currentSettings?.apiKey || '';
     
@@ -47,15 +66,21 @@ export const UserAPIProvider: React.FC<UserAPIProviderProps> = ({ children }) =>
       }, 2000);
     }
     
-    setCurrentApiKey(newApiKey);
-  }, [userSession.currentSettings, currentApiKey, addToast]);
+    // Update currentApiKey if different
+    if (newApiKey !== currentApiKey) {
+      setCurrentApiKey(newApiKey);
+      if (newApiKey) {
+        setSettingsDialogClosed(false);
+      }
+    }
+  }, [userSession.currentSettings?.apiKey, currentApiKey, addToast]);
 
-  // Show settings dialog if user is logged in but has no API key
+  // Show settings dialog if user is logged in but has no API key (and dialog wasn't recently closed)
   useEffect(() => {
-    if (userSession.isLoggedIn && !currentApiKey && !isSettingsOpen) {
+    if (userSession.isLoggedIn && !currentApiKey && !isSettingsOpen && !settingsDialogClosed) {
       onSettingsOpen();
     }
-  }, [userSession.isLoggedIn, currentApiKey, isSettingsOpen, onSettingsOpen]);
+  }, [userSession.isLoggedIn, currentApiKey, isSettingsOpen, onSettingsOpen, settingsDialogClosed]);
 
   // Loading state
   if (userSession.isLoading) {
@@ -183,7 +208,7 @@ export const UserAPIProvider: React.FC<UserAPIProviderProps> = ({ children }) =>
         {/* Settings dialog for API key entry - using comprehensive UserSettingsDialogFull */}
         <UserSettingsDialogFull
           isOpen={isSettingsOpen}
-          onClose={onSettingsClose}
+          onClose={handleSettingsClose}
           forceApiKey={true}
         />
       </>

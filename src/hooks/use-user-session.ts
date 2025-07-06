@@ -465,6 +465,8 @@ export function useUserSession(): UseUserSessionResult {
       await saveUserSettings(currentUser, settings, passwordToUse);
       
       console.log('Settings saved successfully to encrypted storage');
+      
+      // Update local state
       setCurrentSettings(settings);
       setHasSettings(true);
       
