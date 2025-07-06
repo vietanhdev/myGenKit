@@ -32,6 +32,7 @@ export type ClientContentLog = {
 export type Conversation = {
   id: string;
   title: string;
+  description?: string; // Optional description for the conversation
   systemPrompt?: string; // Custom system prompt for this conversation
   appName?: string; // Which app this conversation belongs to
   createdAt: Date;
@@ -42,6 +43,7 @@ export type Conversation = {
 export type ConversationSummary = {
   id: string;
   title: string;
+  description?: string; // Optional description for the conversation
   systemPrompt?: string; // Custom system prompt for this conversation
   appName?: string; // Which app this conversation belongs to
   createdAt: Date;
@@ -109,7 +111,7 @@ export interface PluginContext {
   storage: PluginStorage;
   userId: string;
   addMessage: (message: StreamingLog) => Promise<void>;
-  createConversation: (systemPrompt?: string) => Promise<void>;
+  createConversation: (systemPrompt?: string, appName?: string, title?: string, description?: string) => Promise<void>;
   currentConversation: Conversation | null;
 }
 

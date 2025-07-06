@@ -74,6 +74,7 @@ export function loadConversations(userId: string, password: string): Conversatio
       return {
         id: conv.id,
         title: conv.title,
+        description: conv.description,
         appName: conv.appName,
         systemPrompt: conv.systemPrompt,
         createdAt: new Date(conv.createdAt),
@@ -140,10 +141,18 @@ export function loadConversation(userId: string, password: string, conversationI
 /**
  * Create a new conversation
  */
-export function createConversation(userId: string, password: string, systemPrompt?: string, appName?: string): Conversation {
+export function createConversation(
+  userId: string, 
+  password: string, 
+  systemPrompt?: string, 
+  appName?: string, 
+  title?: string, 
+  description?: string
+): Conversation {
   const newConversation: Conversation = {
     id: generateConversationId(),
-    title: 'New Conversation',
+    title: title || 'New Conversation',
+    description: description,
     systemPrompt: systemPrompt,
     appName: appName,
     createdAt: new Date(),

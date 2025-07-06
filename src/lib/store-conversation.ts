@@ -29,7 +29,7 @@ interface ConversationStore {
   clearStore: () => void;
   loadConversations: () => Promise<void>;
   loadCurrentConversation: (conversationId: string) => Promise<void>;
-  createNewConversation: (systemPrompt?: string, appName?: string) => Promise<void>;
+  createNewConversation: (systemPrompt?: string, appName?: string, title?: string, description?: string) => Promise<void>;
   switchConversation: (conversationId: string) => Promise<void>;
   deleteConversation: (conversationId: string) => Promise<void>;
   updateConversationDetails: (conversationId: string, title?: string, systemPrompt?: string) => Promise<void>;
@@ -129,7 +129,7 @@ export const useConversationStore = create<ConversationStore>((set, get) => ({
   },
   
   // Create new conversation
-  createNewConversation: async (systemPrompt?: string, appName?: string) => {
+  createNewConversation: async (systemPrompt?: string, appName?: string, title?: string, description?: string) => {
     const { userId, userPassword } = get();
     
     if (!userId || !userPassword) {
@@ -139,7 +139,7 @@ export const useConversationStore = create<ConversationStore>((set, get) => ({
     
     try {
       set({ isLoading: true, error: null });
-      const newConversation = createConversation(userId, userPassword, systemPrompt, appName);
+      const newConversation = createConversation(userId, userPassword, systemPrompt, appName, title, description);
       
       // Reload conversations list
       await get().loadConversations();

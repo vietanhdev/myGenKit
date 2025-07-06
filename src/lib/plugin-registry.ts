@@ -80,7 +80,8 @@ class PluginRegistryImpl extends EventEmitter<PluginRegistryEvents> implements P
 
   register(plugin: PluginDefinition): void {
     if (this.plugins.has(plugin.id)) {
-      throw new Error(`Plugin ${plugin.id} is already registered`);
+      console.warn(`Plugin ${plugin.id} is already registered, skipping re-registration`);
+      return;
     }
 
     this.plugins.set(plugin.id, plugin);
@@ -120,7 +121,7 @@ class PluginRegistryImpl extends EventEmitter<PluginRegistryEvents> implements P
     userId: string, 
     userPassword: string,
     addMessage: (message: any) => Promise<void>,
-    createConversation: (systemPrompt?: string) => Promise<void>,
+    createConversation: (systemPrompt?: string, appName?: string, title?: string, description?: string) => Promise<void>,
     currentConversation: any
   ): Promise<void> {
     const plugin = this.plugins.get(pluginId);
@@ -134,11 +135,19 @@ class PluginRegistryImpl extends EventEmitter<PluginRegistryEvents> implements P
 
     try {
       const storage = new PluginStorageImpl(userId, pluginId, userPassword);
+      
+      // Create a wrapper function that automatically passes the plugin ID as the app name
+      const createConversationForPlugin = async (systemPrompt?: string, appName?: string, title?: string, description?: string) => {
+        // If appName is not provided, use the plugin ID as the app name
+        const finalAppName = appName || pluginId;
+        return createConversation(systemPrompt, finalAppName, title, description);
+      };
+      
       const context: PluginContext = {
         storage,
         userId,
         addMessage,
-        createConversation,
+        createConversation: createConversationForPlugin,
         currentConversation
       };
 

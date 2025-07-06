@@ -55,6 +55,7 @@ export default function ConversationListWithAppFilter({
   
   const [deletingConversationId, setDeletingConversationId] = useState<string | null>(null);
   const [editingConversation, setEditingConversation] = useState<Conversation | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [filterByApp, setFilterByApp] = useState<string>('all');
   const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure();
   const { isOpen: isNewConversationOpen, onOpen: onNewConversationOpen, onClose: onNewConversationClose } = useDisclosure();
@@ -77,16 +78,8 @@ export default function ConversationListWithAppFilter({
     }
   }, [conversations, currentAppId, filterByApp]);
 
-  // Get unique app names from conversations
-  const appNames = useMemo(() => {
-    const names = new Set<string>();
-    conversations.forEach(conv => {
-      if (conv.appName) {
-        names.add(conv.appName);
-      }
-    });
-    return Array.from(names);
-  }, [conversations]);
+  // Note: Unique app names logic removed as it's not currently used
+  // Can be re-added when app filtering UI is implemented
 
   const handleCreateConversation = async (title?: string, systemPrompt?: string) => {
     const appName = currentAppId || undefined;

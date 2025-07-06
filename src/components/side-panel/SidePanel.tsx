@@ -16,7 +16,6 @@ import { useConversationStore } from "../../lib/store-conversation";
 import { useCalendarStore } from "../../lib/store-calendar";
 import { useUserSession } from "../../hooks/use-user-session";
 import Logger, { LoggerFilterType } from "../logger/Logger";
-import ConversationList from "./ConversationList";
 import ConversationListWithAppFilter from "./ConversationListWithAppFilter";
 import CleanConversationMessages from "./CleanConversationMessages";
 import Calendar from "./Calendar";

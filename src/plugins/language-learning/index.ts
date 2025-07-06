@@ -208,6 +208,81 @@ const handleQueryWords = async (args: any, context: PluginContext): Promise<Plug
   }
 };
 
+// Helper function to create example scenarios
+const createExampleScenariosInPlugin = async (context: PluginContext) => {
+  console.log('Starting to create example scenarios in plugin...');
+  
+  const exampleScenarios = [
+    {
+      id: 'restaurant-ordering',
+      title: 'Restaurant Ordering',
+      description: 'Practice ordering food and drinks at a restaurant',
+      language: 'en',
+      difficulty: 'beginner' as const,
+      context: 'You are at a nice restaurant and want to order food. The waiter will help you choose dishes and take your order.',
+      userRole: 'Customer',
+      assistantRole: 'Friendly waiter',
+      objectives: [
+        'Practice food vocabulary',
+        'Learn polite expressions for ordering',
+        'Practice asking questions about menu items',
+        'Learn how to make special requests'
+      ],
+      createdAt: new Date(),
+      usageCount: 0
+    },
+    {
+      id: 'job-interview',
+      title: 'Job Interview',
+      description: 'Practice answering common job interview questions',
+      language: 'en',
+      difficulty: 'intermediate' as const,
+      context: 'You are interviewing for a position at a company. The interviewer will ask about your experience, skills, and goals.',
+      userRole: 'Job candidate',
+      assistantRole: 'Professional interviewer',
+      objectives: [
+        'Practice describing work experience',
+        'Learn to highlight strengths and skills',
+        'Practice answering behavioral questions',
+        'Learn professional communication'
+      ],
+      createdAt: new Date(),
+      usageCount: 0
+    },
+    {
+      id: 'hotel-checkin',
+      title: 'Hotel Check-in',
+      description: 'Practice checking into a hotel and asking for information',
+      language: 'en',
+      difficulty: 'beginner' as const,
+      context: 'You have arrived at your hotel and need to check in. You may also want to ask about hotel amenities and local recommendations.',
+      userRole: 'Hotel guest',
+      assistantRole: 'Hotel receptionist',
+      objectives: [
+        'Practice travel vocabulary',
+        'Learn to handle reservation issues',
+        'Practice asking for hotel services',
+        'Learn to ask for local recommendations'
+      ],
+      createdAt: new Date(),
+      usageCount: 0
+    }
+  ];
+  
+  try {
+    console.log('Attempting to save scenarios to storage...');
+    await context.storage.set('rolePlayingScenarios', exampleScenarios);
+    console.log(`Successfully created ${exampleScenarios.length} example scenarios`);
+    
+    // Verify they were saved
+    const saved = await context.storage.get('rolePlayingScenarios');
+    console.log('Verification - scenarios saved:', saved ? saved.length : 'null');
+  } catch (error) {
+    console.error('Failed to create example scenarios:', error);
+    throw error;
+  }
+};
+
 // Plugin definition
 export const languageLearningPlugin: PluginDefinition = {
   id: 'language-learning',
@@ -258,6 +333,13 @@ Be encouraging and supportive in your responses. Adapt your language level to ma
     const sessions = await context.storage.get('sessions');
     if (!sessions) {
       await context.storage.set('sessions', []);
+    }
+    
+    // Initialize role-playing scenarios with examples
+    const scenarios = await context.storage.get('rolePlayingScenarios');
+    if (!scenarios || scenarios.length === 0) {
+      console.log('Creating example role-playing scenarios...');
+      await createExampleScenariosInPlugin(context);
     }
     
     console.log('Language Learning plugin initialized');
