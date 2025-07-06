@@ -63,6 +63,15 @@ export const UserSettingsDialog: React.FC<UserSettingsDialogProps> = ({
     setError('');
   }, [isOpen, userSession.currentSettings]);
 
+  // Check for session expiration when dialog opens
+  useEffect(() => {
+    if (isOpen && userSession.hasSettings && !userSession.currentSettings && !userSession.isAutoUnlocked) {
+      // Session has expired but we have saved settings - show password dialog
+      setPasswordDialog({ isOpen: true });
+      setError('Session expired. Please enter your password to unlock settings.');
+    }
+  }, [isOpen, userSession.hasSettings, userSession.currentSettings, userSession.isAutoUnlocked]);
+
   const handlePasswordSubmit = async (password: string): Promise<boolean> => {
     try {
       // Only handle unlock mode now - save is automatic using stored password
@@ -70,27 +79,18 @@ export const UserSettingsDialog: React.FC<UserSettingsDialogProps> = ({
       if (success) {
         setPasswordDialog({ isOpen: false });
         
-        // If we have pending settings to save (API key entered), try to save them now
-        if (apiKey.trim()) {
-          try {
-            const settings: UserSettings = {
-              apiKey,
-              config: defaultConfig,
-              model,
-              visualizationConfig: {},
-              lastSaved: new Date()
-            };
-            
-            await userSession.saveSettings(settings, password);
-            console.log('Settings saved after unlock');
-            
-            if (!forceApiKey) {
-              onClose();
-            }
-          } catch (saveErr: any) {
-            console.error('Failed to save after unlock:', saveErr);
-            setError('Settings unlocked but failed to save: ' + (saveErr.message || 'Unknown error'));
-          }
+        // Update form state with loaded settings
+        if (userSession.currentSettings) {
+          setApiKey(userSession.currentSettings.apiKey || '');
+          setModel(userSession.currentSettings.model || 'models/gemini-2.0-flash-exp');
+          
+          // Clear any error messages
+          setError('');
+        }
+        
+        // Settings are now loaded and available, close dialog if not forcing API key
+        if (!forceApiKey && userSession.currentSettings?.apiKey) {
+          onClose();
         }
       }
       return success;

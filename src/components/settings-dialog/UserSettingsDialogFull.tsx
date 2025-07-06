@@ -96,6 +96,15 @@ export const UserSettingsDialogFull: React.FC<UserSettingsDialogFullProps> = ({
     setError('');
   }, [isOpen, userSession.currentSettings, updateVisualizationConfig]);
 
+  // Check for session expiration when dialog opens
+  useEffect(() => {
+    if (isOpen && userSession.hasSettings && !userSession.currentSettings && !userSession.isAutoUnlocked) {
+      // Session has expired but we have saved settings - show password dialog
+      setPasswordDialog({ isOpen: true });
+      setError('Session expired. Please enter your password to unlock settings.');
+    }
+  }, [isOpen, userSession.hasSettings, userSession.currentSettings, userSession.isAutoUnlocked]);
+
   // Get function declarations from config
   const functionDeclarations: FunctionDeclaration[] = useMemo(() => {
     if (!Array.isArray(config.tools)) {
@@ -176,27 +185,31 @@ export const UserSettingsDialogFull: React.FC<UserSettingsDialogFullProps> = ({
       if (success) {
         setPasswordDialog({ isOpen: false });
         
-        // If we have pending settings to save (API key entered), try to save them now
-        if (apiKey.trim()) {
-          try {
-            const settings: UserSettings = {
-              apiKey,
-              config,
-              model,
-              visualizationConfig,
-              lastSaved: new Date()
-            };
-            
-            await userSession.saveSettings(settings, password);
-            console.log('Settings saved after unlock');
-            
-            if (!forceApiKey) {
-              onClose();
-            }
-          } catch (saveErr: any) {
-            console.error('Failed to save after unlock:', saveErr);
-            setError('Settings unlocked but failed to save: ' + (saveErr.message || 'Unknown error'));
+        // Update form state with loaded settings
+        if (userSession.currentSettings) {
+          const loadedApiKey = userSession.currentSettings.apiKey || '';
+          const loadedModel = userSession.currentSettings.model || 'models/gemini-2.0-flash-exp';
+          const loadedConfig = userSession.currentSettings.config || defaultConfig;
+          
+          setApiKey(loadedApiKey);
+          setModel(loadedModel);
+          setConfig(loadedConfig);
+          
+          // Update visualization config
+          const vizConfig = userSession.currentSettings.visualizationConfig;
+          if (vizConfig && typeof vizConfig === 'object') {
+            updateVisualizationConfig({ ...defaultVisualizationConfig, ...vizConfig });
+          } else {
+            updateVisualizationConfig(defaultVisualizationConfig);
           }
+          
+          // Clear any error messages
+          setError('');
+        }
+        
+        // Settings are now loaded and available, close dialog if not forcing API key
+        if (!forceApiKey && userSession.currentSettings?.apiKey) {
+          onClose();
         }
       }
       return success;
