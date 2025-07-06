@@ -126,8 +126,6 @@ export const UserSettingsDialog: React.FC<UserSettingsDialogProps> = ({
       // Mark as successfully saved
       setHasSavedSuccessfully(true);
       
-      console.log('UserSettingsDialog - Settings saved successfully, reloading page to ensure proper state');
-      
       // Close dialog first, then reload to ensure clean state
       onClose();
       

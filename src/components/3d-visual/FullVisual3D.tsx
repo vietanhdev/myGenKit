@@ -107,8 +107,6 @@ const FullVisual3D: React.FC = () => {
           resizeObserver.observe(containerRef.current);
         }
 
-        console.log('Full 3D visualization initialized');
-        
         // Cleanup listeners
         const originalCleanup = cleanup;
         cleanup = () => {
@@ -158,16 +156,12 @@ const FullVisual3D: React.FC = () => {
           visualRef.current.outputNode = outputNode;
         }
         
-        console.log('Full 3D visualization connected to audio stream');
-        
       } catch (error) {
         console.error('Error connecting full 3D visualization to audio stream:', error);
       }
     };
 
     const handleGainNodeRecreated = (newGainNode: GainNode) => {
-      console.log('Full 3D visualization reconnecting to new gainNode');
-      
       // Reconnect to the new gainNode
       connectToAudioStream();
     };
@@ -197,65 +191,48 @@ const FullVisual3D: React.FC = () => {
   useEffect(() => {
     if (!visualRef.current || !audioStreamer) return;
 
-    let mediaStream: MediaStream | null = null;
-    let sourceNode: MediaStreamAudioSourceNode | null = null;
-
     const setupMicrophoneInput = async () => {
       try {
-        // Clean up existing connection
-        if (sourceNode) {
-          sourceNode.disconnect();
-          sourceNode = null;
-        }
+        // Get microphone access
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true },
+        });
         
-        // Request microphone access if we don't have a stream yet
-        if (!mediaStream) {
-          mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        }
+        // Create media stream source
+        const audioCtx = audioStreamer.context;
+        const source = audioCtx.createMediaStreamSource(stream);
         
-        if (visualRef.current?.inputNode && audioStreamer && mediaStream) {
-          sourceNode = audioStreamer.context.createMediaStreamSource(mediaStream);
-          if (sourceNode && visualRef.current.inputNode) {
-            sourceNode.connect(visualRef.current.inputNode);
-            console.log('Microphone connected to full 3D visualization');
-          }
+        // Connect to visualization input
+        if (visualRef.current) {
+          visualRef.current.inputNode = source;
         }
       } catch (error) {
-        console.log('Microphone access denied or not available for full 3D visualization');
+        // Microphone access denied or not available
       }
     };
 
     const handleGainNodeRecreated = (newGainNode: GainNode) => {
-      console.log('Full 3D visualization reconnecting microphone to new gainNode');
-      
-      // Reconnect microphone
+      // Reconnect microphone when gainNode is recreated
       setupMicrophoneInput();
     };
 
-    // Listen for gainNode recreation events
+    // Listen for gainNode recreation events for microphone
     audioStreamer.on('gainNodeRecreated', handleGainNodeRecreated);
 
     setupMicrophoneInput();
 
     return () => {
       audioStreamer.off('gainNodeRecreated', handleGainNodeRecreated);
-      
-      if (sourceNode) {
-        sourceNode.disconnect();
-      }
-      if (mediaStream) {
-        mediaStream.getTracks().forEach(track => track.stop());
-      }
     };
   }, [audioStreamer]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      console.log('FullVisual3D unmounting, cleaning up...');
       if (visualRef.current?.parentNode) {
         visualRef.current.parentNode.removeChild(visualRef.current);
       }
+      visualRef.current = null;
     };
   }, []);
 

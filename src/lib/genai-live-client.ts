@@ -204,9 +204,7 @@ export class GenAILiveClient extends EventEmitter<LiveClientEventTypes> {
       return false;
     }
 
-    console.log("Attempting to connect to GenAI Live API...");
-    console.log("Model:", model);
-    console.log("Config:", JSON.stringify(config, null, 2));
+
 
     this._status = "connecting";
     this.config = config;
@@ -220,13 +218,11 @@ export class GenAILiveClient extends EventEmitter<LiveClientEventTypes> {
     };
 
     try {
-      console.log("Calling client.live.connect...");
       this._session = await this.client.live.connect({
         model,
         config,
         callbacks,
       });
-      console.log("Connection established successfully");
       // Note: status will be set to "connected" in onopen callback
       return true;
     } catch (e) {
@@ -289,7 +285,6 @@ export class GenAILiveClient extends EventEmitter<LiveClientEventTypes> {
   }
 
   protected onopen() {
-    console.log("WebSocket connection opened successfully");
     this._status = "connected";
     this.log("client.open", "Connected");
     this.emit("open");
@@ -443,7 +438,8 @@ export class GenAILiveClient extends EventEmitter<LiveClientEventTypes> {
         this.emitModelMessage(parts);
       }
     } else {
-      console.log("received unmatched message", message);
+      // Unmatched message - log it via the logging system instead
+      this.log("server.unmatched", message);
     }
   }
 

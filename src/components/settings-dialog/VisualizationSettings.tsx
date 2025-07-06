@@ -15,9 +15,7 @@ const VisualizationSettings: React.FC<VisualizationSettingsProps> = ({
   onChange
 }) => {
   const handleTypeChange = (type: 'none' | 'css' | '3d-sphere') => {
-    console.log(`VisualizationSettings: Changing type to:`, type);
     const newConfig = { type };
-    console.log('New config:', newConfig);
     onChange(newConfig);
   };
 
@@ -34,10 +32,8 @@ const VisualizationSettings: React.FC<VisualizationSettingsProps> = ({
         <RadioGroup
           value={config.type}
           onValueChange={(value) => {
-            console.log('RadioGroup onValueChange called with:', value, typeof value);
             // Ensure we get the string value, not a Set
             const stringValue = typeof value === 'string' ? value : Array.from(value as Set<string>)[0];
-            console.log('Processed value:', stringValue);
             handleTypeChange(stringValue as 'none' | 'css' | '3d-sphere');
           }}
           orientation="vertical"

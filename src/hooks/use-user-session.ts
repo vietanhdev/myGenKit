@@ -68,50 +68,37 @@ export function useUserSession(): UseUserSessionResult {
   
   // Helper functions for localStorage password management
   const storeSessionPassword = (password: string, username: string) => {
-    const timestamp = Date.now();
+    const expirationTime = Date.now() + SESSION_TIMEOUT * 1000;
     const sessionData = {
       password,
       username,
-      timestamp
+      expirationTime
     };
     localStorage.setItem(SESSION_PASSWORD_KEY, JSON.stringify(sessionData));
-    localStorage.setItem(SESSION_TIMESTAMP_KEY, timestamp.toString());
-    console.log('Password stored in localStorage for user:', username);
   };
   
   const getSessionPassword = useCallback((): string | null => {
     try {
-      const sessionData = localStorage.getItem(SESSION_PASSWORD_KEY);
-      const timestamp = localStorage.getItem(SESSION_TIMESTAMP_KEY);
+      const stored = localStorage.getItem(SESSION_PASSWORD_KEY);
+      if (!stored) return null;
       
-      if (!sessionData || !timestamp) {
-        return null;
-      }
-      
-      const parsed = JSON.parse(sessionData);
-      const sessionTimestamp = parseInt(timestamp);
+      const sessionData = JSON.parse(stored);
       const now = Date.now();
-      const elapsed = Math.floor((now - sessionTimestamp) / 1000);
       
-      if (elapsed > SESSION_TIMEOUT) {
-        console.log('Session expired - clearing stored password');
-        clearSessionPassword();
+      if (now > sessionData.expirationTime) {
+        localStorage.removeItem(SESSION_PASSWORD_KEY);
         return null;
       }
       
-      console.log('Retrieved password from localStorage - elapsed:', elapsed, 'seconds');
-      return parsed.password;
+      return sessionData.password;
     } catch (error) {
-      console.error('Error retrieving session password:', error);
-      clearSessionPassword();
+      localStorage.removeItem(SESSION_PASSWORD_KEY);
       return null;
     }
   }, []);
   
   const clearSessionPassword = () => {
     localStorage.removeItem(SESSION_PASSWORD_KEY);
-    localStorage.removeItem(SESSION_TIMESTAMP_KEY);
-    console.log('Session password cleared from localStorage');
   };
   
   const getLastActivityTime = (): number => {
@@ -148,8 +135,6 @@ export function useUserSession(): UseUserSessionResult {
     const now = Date.now();
     localStorage.setItem(SESSION_TIMESTAMP_KEY, now.toString());
     
-    console.log('Tracking activity at', new Date(now).toLocaleTimeString(), '- setting timeout for', SESSION_TIMEOUT, 'seconds');
-    
     // Clear existing timeout
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
@@ -157,7 +142,6 @@ export function useUserSession(): UseUserSessionResult {
     
     // Set new timeout
     timeoutRef.current = setTimeout(() => {
-      console.log('Session timeout reached via setTimeout - clearing password');
       clearSessionPassword();
       setIsAutoUnlocked(false);
       setCurrentSettings(null);
@@ -177,16 +161,12 @@ export function useUserSession(): UseUserSessionResult {
   // Countdown timer - start when auto-unlocked
   useEffect(() => {
     if (isAutoUnlocked && !countdownRef.current) {
-      console.log('Starting countdown timer for session');
       countdownRef.current = setInterval(() => {
         const elapsed = Math.floor((Date.now() - getLastActivityTime()) / 1000);
         const remaining = Math.max(0, SESSION_TIMEOUT - elapsed);
         setRemainingTime(remaining);
         
-        console.log('Countdown timer - elapsed:', elapsed, 'remaining:', remaining);
-        
         if (remaining <= 0) {
-          console.log('Session timeout - clearing password');
           clearSessionPassword();
           setIsAutoUnlocked(false);
           setCurrentSettings(null);
@@ -200,7 +180,6 @@ export function useUserSession(): UseUserSessionResult {
       }, 1000);
     } else if (!isAutoUnlocked && countdownRef.current) {
       // Clear timer if no longer auto-unlocked
-      console.log('Clearing countdown timer - no longer auto-unlocked');
       clearInterval(countdownRef.current);
       countdownRef.current = null;
       setRemainingTime(0);
@@ -221,11 +200,9 @@ export function useUserSession(): UseUserSessionResult {
       // Only try to auto-unlock if we have password, user, settings exist, but no current settings loaded
       if (storedPassword && currentUser && hasSettings && !currentSettings) {
         try {
-          console.log('Auto-unlocking settings for user:', currentUser.username);
           const settings = await loadUserSettings(currentUser, storedPassword);
           if (settings) {
             setCurrentSettings(settings);
-            console.log('Auto-unlock successful');
           }
         } catch (error) {
           console.warn('Auto-unlock failed, but keeping password for manual operations:', error);
@@ -260,8 +237,6 @@ export function useUserSession(): UseUserSessionResult {
     try {
       const user = authenticateUser(username, password);
       if (user) {
-        console.log('Authentication successful for user:', user.username);
-        
         // Set all user state first
         setCurrentUserState(user);
         setCurrentUser(user);
@@ -271,11 +246,9 @@ export function useUserSession(): UseUserSessionResult {
         setHasSettings(hasUserSettings);
         
         // Store password in localStorage BEFORE any async operations
-        console.log('Storing password for user:', user.username);
         storeSessionPassword(password, user.username);
         
         // Set auto-unlock and start tracking
-        console.log('Setting auto-unlock to true');
         setIsAutoUnlocked(true);
         setRemainingTime(SESSION_TIMEOUT);
         
@@ -285,7 +258,6 @@ export function useUserSession(): UseUserSessionResult {
         }
         
         timeoutRef.current = setTimeout(() => {
-          console.log('Session timeout reached via login timeout - clearing password');
           clearSessionPassword();
           setIsAutoUnlocked(false);
           setCurrentSettings(null);
@@ -298,16 +270,12 @@ export function useUserSession(): UseUserSessionResult {
           navigate('/login', { replace: true });
         }, SESSION_TIMEOUT * 1000);
         
-        console.log('Login state setup complete - password stored, auto-unlock enabled');
-        
         // Automatically load settings if they exist
         if (hasUserSettings) {
           try {
-            console.log('Auto-loading settings for user:', user.username);
             const settings = await loadUserSettings(user, password);
             if (settings) {
               setCurrentSettings(settings);
-              console.log('Settings loaded successfully');
             }
           } catch (error) {
             console.error('Failed to auto-load settings after login:', error);
@@ -319,14 +287,9 @@ export function useUserSession(): UseUserSessionResult {
               setHasSettings(false);
             }
             
-            console.log('Password preserved for manual operations despite auto-load failure');
+            // Keep password available for manual operations despite auto-load failure
           }
         }
-        
-        // Final verification
-        setTimeout(() => {
-          console.log('Final login check - password available:', !!getSessionPassword(), 'auto-unlocked state will update async');
-        }, 50);
         
         return true;
       }
@@ -335,13 +298,12 @@ export function useUserSession(): UseUserSessionResult {
       console.error('Login failed:', error);
       return false;
     }
-  }, [getSessionPassword, navigate]);
+  }, [navigate]);
 
   // Register function
   const register = useCallback(async (username: string, password: string): Promise<boolean> => {
     try {
       const user = createUser(username, password);
-      console.log('User created successfully:', user.username);
       
       // Set all user state first
       setCurrentUserState(user);
@@ -350,11 +312,9 @@ export function useUserSession(): UseUserSessionResult {
       setHasSettings(false);
       
       // Store password in localStorage BEFORE any async operations
-      console.log('Registration - storing password for user:', user.username);
       storeSessionPassword(password, user.username);
       
       // Set auto-unlock and start tracking
-      console.log('Setting auto-unlock to true');
       setIsAutoUnlocked(true);
       setRemainingTime(SESSION_TIMEOUT);
       
@@ -364,7 +324,6 @@ export function useUserSession(): UseUserSessionResult {
       }
       
       timeoutRef.current = setTimeout(() => {
-        console.log('Session timeout reached via register timeout - clearing password');
         clearSessionPassword();
         setIsAutoUnlocked(false);
         setCurrentSettings(null);
@@ -377,19 +336,12 @@ export function useUserSession(): UseUserSessionResult {
         navigate('/login', { replace: true });
       }, SESSION_TIMEOUT * 1000);
       
-      console.log('Registration state setup complete - password stored, auto-unlock enabled');
-      
-      // Final verification
-      setTimeout(() => {
-        console.log('Final register check - password available:', !!getSessionPassword(), 'user:', user.username);
-      }, 50);
-      
       return true;
     } catch (error) {
-      console.error('Registration failed:', error);
+      console.error('User creation failed:', error);
       return false;
     }
-  }, [getSessionPassword, navigate]);
+  }, [navigate]);
 
   // Logout function
   const logout = useCallback(() => {
@@ -447,8 +399,7 @@ export function useUserSession(): UseUserSessionResult {
       // Use provided password or stored password from login
       let passwordToUse = password || getSessionPassword();
       
-      console.log('Saving settings - password provided:', !!password, 'stored password available:', !!getSessionPassword(), 'current user:', currentUser.username);
-      console.log('Password from localStorage:', getSessionPassword() ? '[HIDDEN]' : 'null');
+      
       
       if (!passwordToUse) {
         console.error('No password available for saving. Current state:', {
@@ -461,10 +412,7 @@ export function useUserSession(): UseUserSessionResult {
         throw new Error('Session expired. Please unlock your settings first.');
       }
       
-      console.log('Attempting to save settings with available password');
       await saveUserSettings(currentUser, settings, passwordToUse);
-      
-      console.log('Settings saved successfully to encrypted storage');
       
       // Update local state
       setCurrentSettings(settings);
@@ -472,12 +420,9 @@ export function useUserSession(): UseUserSessionResult {
       
       // If we used the stored password, ensure session remains active
       if (!password && getSessionPassword()) {
-        console.log('Refreshing session activity after save');
         localStorage.setItem(SESSION_TIMESTAMP_KEY, Date.now().toString());
         setRemainingTime(SESSION_TIMEOUT);
       }
-      
-      console.log('Settings save operation completed');
     } catch (error) {
       console.error('Failed to save settings:', error);
       throw error;

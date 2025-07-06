@@ -18,17 +18,12 @@ export const UserAPIProvider: React.FC<UserAPIProviderProps> = ({ children }) =>
   const { isOpen: isSettingsOpen, onOpen: onSettingsOpen, onClose: onSettingsClose } = useDisclosure();
   const { messages: toastMessages, addToast, removeToast } = useToast();
 
-  // Simple API key detection from userSession
+  // Update current API key when user settings change
   useEffect(() => {
-    const apiKey = userSession.currentSettings?.apiKey || '';
-    if (apiKey !== currentApiKey) {
-      console.log('UserAPIProvider - API key changed, updating currentApiKey');
-      setCurrentApiKey(apiKey);
-      if (apiKey) {
-        setSettingsDialogClosed(false);
-      }
+    if (userSession.currentSettings?.apiKey) {
+      setCurrentApiKey(userSession.currentSettings.apiKey);
     }
-  }, [userSession.currentSettings?.apiKey, currentApiKey]);
+  }, [userSession.currentSettings?.apiKey]);
 
   // Simple close handler
   const handleSettingsClose = () => {

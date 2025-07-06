@@ -11,7 +11,6 @@ const CSSVisualizer: React.FC = () => {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      console.log('CSS Visualizer unmounting, cleaning up...');
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
         animationRef.current = undefined;
@@ -56,16 +55,12 @@ const CSSVisualizer: React.FC = () => {
 
         // Connect to audio stream
         audioStreamer.gainNode.connect(analyser);
-        
-        console.log('CSS Visualizer connected to audio stream');
       } catch (error) {
         console.error('Error connecting CSS visualizer to audio stream:', error);
       }
     };
 
     const handleGainNodeRecreated = (newGainNode: GainNode) => {
-      console.log('CSS Visualizer reconnecting to new gainNode');
-      
       // Reconnect to the new gainNode
       connectToAudioStream();
     };
