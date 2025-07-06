@@ -7,6 +7,7 @@ import VolMeterWorket from "../lib/worklets/vol-meter";
 import { LiveConnectConfig } from "@google/genai";
 import { useConversationStore } from "../lib/store-conversation";
 import { useSecureSettings } from "./use-secure-settings";
+import { pluginRegistry } from "../lib/plugin-registry";
 
 export type UseLiveAPIResults = {
   client: GenAILiveClient;
@@ -102,6 +103,49 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
       addMessageToCurrentConversation(message);
     };
 
+    // Handle plugin tool calls
+    const onToolCall = async (toolCall: any) => {
+      if (!toolCall.functionCalls) {
+        return;
+      }
+
+      // Process each function call
+      const functionResponses: Array<{
+        response: { output: any };
+        id: string;
+        name: string;
+      }> = [];
+      
+      for (const fc of toolCall.functionCalls) {
+        try {
+          // Check if this is a plugin tool
+          const result = await pluginRegistry.handleToolCall(fc.name, fc.args);
+          
+          functionResponses.push({
+            response: { output: result },
+            id: fc.id,
+            name: fc.name,
+          });
+        } catch (error) {
+          // If not a plugin tool or if there's an error, return error response
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          console.error(`Tool call error for ${fc.name}:`, error);
+          functionResponses.push({
+            response: { output: { success: false, error: errorMessage } },
+            id: fc.id,
+            name: fc.name,
+          });
+        }
+      }
+
+      // Send tool responses back
+      if (functionResponses.length > 0) {
+        setTimeout(() => {
+          client.sendToolResponse({ functionResponses });
+        }, 200);
+      }
+    };
+
     client
       .on("error", onError)
       .on("open", onOpen)
@@ -109,7 +153,8 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
       .on("interrupted", stopAudioStreamer)
       .on("audio", onAudio)
       .on("conversationUserMessage", onConversationUserMessage)
-      .on("conversationModelMessage", onConversationModelMessage);
+      .on("conversationModelMessage", onConversationModelMessage)
+      .on("toolcall", onToolCall);
 
     return () => {
       client
@@ -120,6 +165,7 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
         .off("audio", onAudio)
         .off("conversationUserMessage", onConversationUserMessage)
         .off("conversationModelMessage", onConversationModelMessage)
+        .off("toolcall", onToolCall)
         .disconnect();
     };
   }, [client, addMessageToCurrentConversation]);
@@ -130,10 +176,19 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
     }
     client.disconnect();
     
+    // Get plugin tools and merge with existing tools
+    const pluginTools = pluginRegistry.getPluginTools().map(tool => ({
+      functionDeclarations: [tool.declaration]
+    }));
+    
     // Merge conversation-specific system prompt with config
     const effectiveConfig: LiveConnectConfig = {
       ...config,
-      systemInstruction: effectiveSystemPrompt
+      systemInstruction: effectiveSystemPrompt,
+      tools: [
+        ...(config.tools || []),
+        ...pluginTools
+      ]
     };
     
     await client.connect(model, effectiveConfig);

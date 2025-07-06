@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { RiSidebarFoldLine, RiSidebarUnfoldLine, RiHistoryLine, RiTerminalLine, RiLogoutBoxLine, RiCalendarLine, RiSettingsLine } from "react-icons/ri";
+import { RiSidebarFoldLine, RiSidebarUnfoldLine, RiHistoryLine, RiTerminalLine, RiLogoutBoxLine, RiCalendarLine, RiSettingsLine, RiTranslate } from "react-icons/ri";
 import { 
   Select, 
   SelectItem, 
@@ -17,9 +17,13 @@ import { useCalendarStore } from "../../lib/store-calendar";
 import { useUserSession } from "../../hooks/use-user-session";
 import Logger, { LoggerFilterType } from "../logger/Logger";
 import ConversationList from "./ConversationList";
+import ConversationListWithAppFilter from "./ConversationListWithAppFilter";
 import CleanConversationMessages from "./CleanConversationMessages";
 import Calendar from "./Calendar";
 import { UserSettingsDialogFull } from "../settings-dialog/UserSettingsDialogFull";
+import { pluginRegistry } from "../../lib/plugin-registry";
+import { languageLearningPlugin } from "../../plugins/language-learning";
+import { PluginDefinition } from "../../types";
 
 const filterOptions = [
   { value: "conversations", label: "Conversations" },
@@ -38,7 +42,10 @@ export default function SidePanel() {
   const {
     initializeStore,
     clearStore,
-    error: conversationError
+    error: conversationError,
+    createNewConversation,
+    addMessageToCurrentConversation,
+    currentConversation
   } = useConversationStore();
   
   const {
@@ -51,6 +58,8 @@ export default function SidePanel() {
   const [selectedFilter, setSelectedFilter] = useState<string>("none");
   const [activeTab, setActiveTab] = useState<string>("conversations");
   const { isOpen: isSettingsOpen, onOpen: onSettingsOpen, onClose: onSettingsClose } = useDisclosure();
+  const [plugins, setPlugins] = useState<PluginDefinition[]>([]);
+  const [pluginsInitialized, setPluginsInitialized] = useState(false);
 
   // Ensure activeTab is valid in production environment
   useEffect(() => {
@@ -164,6 +173,43 @@ export default function SidePanel() {
       clearCalendarStore();
     }
   }, [isLoggedIn, currentUser, initializeStore, clearStore, initializeCalendarStore, clearCalendarStore]);
+
+  // Initialize plugins when user logs in
+  useEffect(() => {
+    if (isLoggedIn && currentUser && !pluginsInitialized) {
+      const initPlugins = async () => {
+        try {
+          // Register the Language Learning plugin
+          pluginRegistry.register(languageLearningPlugin);
+          
+          // Initialize plugin with context
+          const sessionPassword = localStorage.getItem('genkit_session_password');
+          if (sessionPassword) {
+            const sessionData = JSON.parse(sessionPassword);
+            
+            await pluginRegistry.initializePlugin(
+              'language-learning',
+              currentUser.id,
+              sessionData.password,
+              addMessageToCurrentConversation,
+              createNewConversation,
+              currentConversation
+            );
+            
+            setPlugins(pluginRegistry.getAllPlugins());
+            setPluginsInitialized(true);
+          }
+        } catch (error) {
+          console.error('Failed to initialize plugins:', error);
+        }
+      };
+      
+      initPlugins();
+    } else if (!isLoggedIn) {
+      setPlugins([]);
+      setPluginsInitialized(false);
+    }
+  }, [isLoggedIn, currentUser, pluginsInitialized, addMessageToCurrentConversation, createNewConversation, currentConversation]);
 
   // listen for log events (technical logs only)
   useEffect(() => {
@@ -316,6 +362,18 @@ export default function SidePanel() {
                   </div>
                 }
               />
+              {/* Plugin Tabs */}
+              {plugins.map((plugin) => (
+                <Tab
+                  key={plugin.id}
+                  title={
+                    <div className="flex items-center gap-2">
+                      <RiTranslate size={16} />
+                      <span>{plugin.name}</span>
+                    </div>
+                  }
+                />
+              ))}
               {process.env.NODE_ENV === 'development' && (
                 <Tab
                   key="logs"
@@ -340,7 +398,7 @@ export default function SidePanel() {
                 {/* Conversation List - Fixed width */}
                 <div className="w-1/3 border-r-1 border-divider bg-content1 overflow-y-auto">
                   <div className="p-4">
-                    <ConversationList />
+                    <ConversationListWithAppFilter />
                   </div>
                 </div>
                 
@@ -355,6 +413,42 @@ export default function SidePanel() {
             ) : activeTab === "calendar" ? (
               <div className="p-4">
                 <Calendar />
+              </div>
+            ) : plugins.find(p => p.id === activeTab) ? (
+              <div className="flex h-full">
+                {/* Plugin Conversation List - Fixed width */}
+                <div className="w-1/3 border-r-1 border-divider bg-content1 overflow-y-auto">
+                  <div className="p-4">
+                    <ConversationListWithAppFilter 
+                      currentAppId={activeTab}
+                      onCreateAppConversation={(appId) => {
+                        const plugin = plugins.find(p => p.id === appId);
+                        if (plugin && plugin.systemPrompt) {
+                          createNewConversation(plugin.systemPrompt, appId);
+                        } else {
+                          createNewConversation(undefined, appId);
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+                
+                {/* Plugin Component - Expandable */}
+                <div className="flex-1 flex flex-col overflow-hidden">
+                  {(() => {
+                    const plugin = plugins.find(p => p.id === activeTab);
+                    if (plugin) {
+                      const PluginComponent = plugin.tabComponent;
+                      return (
+                        <PluginComponent 
+                          isActive={true}
+                          context={pluginRegistry.getPluginContext(plugin.id)}
+                        />
+                      );
+                    }
+                    return null;
+                  })()}
+                </div>
               </div>
             ) : (
               <div className="px-4 py-2">
