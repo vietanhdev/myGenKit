@@ -3,12 +3,7 @@ import { useLiveAPIContext } from '../../contexts/LiveAPIContext';
 import './visual-3d.ts';
 import { GdmLiveAudioVisuals3D } from './visual-3d';
 
-interface FullVisual3DProps {
-  opacity?: number;
-  blur?: boolean;
-}
-
-const FullVisual3D: React.FC<FullVisual3DProps> = ({ opacity = 0.3, blur = true }) => {
+const FullVisual3D: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const visualRef = useRef<GdmLiveAudioVisuals3D | null>(null);
   const { audioStreamer } = useLiveAPIContext();
@@ -170,9 +165,21 @@ const FullVisual3D: React.FC<FullVisual3DProps> = ({ opacity = 0.3, blur = true 
       }
     };
 
+    const handleGainNodeRecreated = (newGainNode: GainNode) => {
+      console.log('Full 3D visualization reconnecting to new gainNode');
+      
+      // Reconnect to the new gainNode
+      connectToAudioStream();
+    };
+
+    // Listen for gainNode recreation events
+    audioStreamer.on('gainNodeRecreated', handleGainNodeRecreated);
+
     connectToAudioStream();
 
     return () => {
+      audioStreamer.off('gainNodeRecreated', handleGainNodeRecreated);
+      
       // Cleanup audio connections
       if (visualRef.current) {
         try {
@@ -188,20 +195,29 @@ const FullVisual3D: React.FC<FullVisual3DProps> = ({ opacity = 0.3, blur = true 
 
   // Handle microphone input
   useEffect(() => {
-    if (!visualRef.current) return;
+    if (!visualRef.current || !audioStreamer) return;
 
     let mediaStream: MediaStream | null = null;
     let sourceNode: MediaStreamAudioSourceNode | null = null;
 
     const setupMicrophoneInput = async () => {
       try {
-        // Request microphone access
-        mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        // Clean up existing connection
+        if (sourceNode) {
+          sourceNode.disconnect();
+          sourceNode = null;
+        }
         
-        if (visualRef.current?.inputNode && audioStreamer) {
+        // Request microphone access if we don't have a stream yet
+        if (!mediaStream) {
+          mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        }
+        
+        if (visualRef.current?.inputNode && audioStreamer && mediaStream) {
           sourceNode = audioStreamer.context.createMediaStreamSource(mediaStream);
           if (sourceNode && visualRef.current.inputNode) {
             sourceNode.connect(visualRef.current.inputNode);
+            console.log('Microphone connected to full 3D visualization');
           }
         }
       } catch (error) {
@@ -209,9 +225,21 @@ const FullVisual3D: React.FC<FullVisual3DProps> = ({ opacity = 0.3, blur = true 
       }
     };
 
+    const handleGainNodeRecreated = (newGainNode: GainNode) => {
+      console.log('Full 3D visualization reconnecting microphone to new gainNode');
+      
+      // Reconnect microphone
+      setupMicrophoneInput();
+    };
+
+    // Listen for gainNode recreation events
+    audioStreamer.on('gainNodeRecreated', handleGainNodeRecreated);
+
     setupMicrophoneInput();
 
     return () => {
+      audioStreamer.off('gainNodeRecreated', handleGainNodeRecreated);
+      
       if (sourceNode) {
         sourceNode.disconnect();
       }
@@ -242,8 +270,6 @@ const FullVisual3D: React.FC<FullVisual3DProps> = ({ opacity = 0.3, blur = true 
         height: '100%',
         zIndex: 0,
         pointerEvents: 'none',
-        opacity: opacity,
-        filter: blur ? 'blur(0.5px)' : 'none',
         background: 'radial-gradient(circle at center, rgba(16, 12, 20, 0.9) 0%, rgba(16, 12, 20, 0.95) 100%)',
         overflow: 'hidden'
       }}

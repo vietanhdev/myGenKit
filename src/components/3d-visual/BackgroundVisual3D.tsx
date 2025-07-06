@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import Visual3D from './Visual3D';
 import FullVisual3D from './FullVisual3D';
 import CSSVisualizer from './CSSVisualizer';
-import JarvisVisualizer from './JarvisVisualizer';
 import { VisualizationConfig } from '../settings-dialog/VisualizationSettings';
 import { useSidebarWidth } from '../../hooks/use-sidebar-width';
 import './visualization-container.scss';
@@ -20,76 +18,36 @@ const BackgroundVisual3D: React.FC<BackgroundVisual3DProps> = ({ config }) => {
   // Reinitialize when visualization type changes
   useEffect(() => {
     if (config.type !== previousType) {
-      console.log(`Switching visualization from ${previousType} to ${config.type}`);
       setVisualizationKey(prev => prev + 1);
       setPreviousType(config.type);
     }
   }, [config.type, previousType]);
 
   // Don't render anything if disabled
-  if (!config.enabled) {
+  if (config.type === 'none') {
     return null;
   }
 
   // Render based on visualization type with key for forced remount
   const renderVisualization = () => {
     switch (config.type) {
-      case 'none':
-        return null;
-        
       case 'css':
-        return (
-          <CSSVisualizer 
-            key={`css-${visualizationKey}`}
-            opacity={config.opacity} 
-          />
-        );
+        return <CSSVisualizer key={`css-${visualizationKey}`} />;
         
-      case '3d-light':
-        return (
-          <Visual3D 
-            key={`3d-light-${visualizationKey}`}
-            opacity={config.opacity} 
-            blur={false} // Disable blur for better performance
-          />
-        );
-        
-      case '3d-full':
-        return (
-          <FullVisual3D 
-            key={`3d-full-${visualizationKey}`}
-            opacity={config.opacity}
-            blur={false} // Disable blur for better performance
-          />
-        );
-        
-      case 'jarvis':
-        return (
-          <JarvisVisualizer 
-            key={`jarvis-${visualizationKey}`}
-            opacity={config.opacity}
-            intensity={config.intensity}
-            color={config.color}
-          />
-        );
+      case '3d-sphere':
+        return <FullVisual3D key={`3d-sphere-${visualizationKey}`} />;
         
       default:
-        // Fallback to CSS visualizer
-        return (
-          <CSSVisualizer 
-            key={`fallback-${visualizationKey}`}
-            opacity={config.opacity} 
-          />
-        );
+        return <FullVisual3D key={`fallback-${visualizationKey}`} />;
     }
   };
 
   return (
     <div 
-      className={`background-visualization-container ${(config.type === 'jarvis' || config.type === '3d-full') ? 'right-side-container' : ''}`}
+      className={`background-visualization-container ${config.type === '3d-sphere' ? 'right-side-container' : ''}`}
       style={{
-        // For Jarvis and Full 3D visualizations, position to the right of the sidebar
-        ...((config.type === 'jarvis' || config.type === '3d-full') && {
+        // For 3DSphere visualization, position to the right of the sidebar
+        ...(config.type === '3d-sphere' && {
           left: `${sidebarWidth}px`,
           width: `calc(100% - ${sidebarWidth}px)`
         })

@@ -2,8 +2,9 @@ import {
   createWorketFromSrc,
   registeredWorklets,
 } from "./audioworklet-registry";
+import { EventEmitter } from "eventemitter3";
 
-export class AudioStreamer {
+export class AudioStreamer extends EventEmitter {
   private sampleRate: number = 24000;
   private bufferSize: number = 7680;
   // A queue of audio buffers to be played. Each buffer is a Float32Array.
@@ -22,6 +23,7 @@ export class AudioStreamer {
   public onComplete = () => {};
 
   constructor(public context: AudioContext) {
+    super();
     this.gainNode = this.context.createGain();
     this.source = this.context.createBufferSource();
     this.gainNode.connect(this.context.destination);
@@ -216,6 +218,9 @@ export class AudioStreamer {
       this.gainNode.disconnect();
       this.gainNode = this.context.createGain();
       this.gainNode.connect(this.context.destination);
+      
+      // Emit event to notify connected components about the new gainNode
+      this.emit('gainNodeRecreated', this.gainNode);
     }, 200);
   }
 

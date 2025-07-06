@@ -4,11 +4,7 @@ import { VisualizationConfig } from '../components/settings-dialog/Visualization
 const STORAGE_KEY = 'mygenkit-visualization-settings';
 
 const defaultConfig: VisualizationConfig = {
-  type: '3d-full',
-  intensity: 'medium',
-  opacity: 0.3,
-  color: 'blue',
-  enabled: true
+  type: '3d-sphere'
 };
 
 export function useVisualizationSettings() {
@@ -22,25 +18,32 @@ export function useVisualizationSettings() {
       if (saved) {
         const parsedConfig = JSON.parse(saved);
         
-        // Migration: Force Full 3D as default for existing users
-        // If the saved config has old types, migrate to '3d-full'
-        if (parsedConfig.type === 'css' || parsedConfig.type === 'jarvis') {
-          console.log(`Migrating from ${parsedConfig.type} to Full 3D visualization`);
-          const migratedConfig = {
-            ...defaultConfig,
-            ...parsedConfig,
-            type: '3d-full',
-            opacity: 0.3 // Update opacity for Full 3D
-          };
+        // Migration: Handle deprecated and renamed visualization types
+        if (parsedConfig.type === '3d-full') {
+          // Migrate '3d-full' to '3d-sphere'
+          const migratedConfig = { type: '3d-sphere' as const };
           setConfig(migratedConfig);
-          // Save the migrated config back to localStorage
           localStorage.setItem(STORAGE_KEY, JSON.stringify(migratedConfig));
-          console.log('Migration completed:', migratedConfig);
+        } else if (parsedConfig.type === 'jarvis' || parsedConfig.type === '3d-light') {
+          // Migrate deprecated types to 3DSphere (default)
+          const migratedConfig = { type: '3d-sphere' as const };
+          setConfig(migratedConfig);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(migratedConfig));
+        } else if (parsedConfig.enabled === false) {
+          // Migrate old enabled=false to type='none'
+          const migratedConfig = { type: 'none' as const };
+          setConfig(migratedConfig);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(migratedConfig));
+        } else if (parsedConfig.type === 'css' || parsedConfig.type === '3d-sphere' || parsedConfig.type === 'none') {
+          // Valid type, use it
+          const validConfig = { type: parsedConfig.type };
+          setConfig(validConfig);
         } else {
-          // Merge with defaults to handle missing properties
-          console.log('Using saved config:', parsedConfig);
-          setConfig({ ...defaultConfig, ...parsedConfig });
+          // Unknown type, use defaults (3DSphere)
+          setConfig(defaultConfig);
         }
+      } else {
+        setConfig(defaultConfig);
       }
     } catch (error) {
       console.warn('Failed to load visualization settings:', error);
@@ -49,8 +52,6 @@ export function useVisualizationSettings() {
       setIsLoaded(true);
     }
   }, []);
-
-
 
   // Save settings to localStorage whenever config changes
   useEffect(() => {

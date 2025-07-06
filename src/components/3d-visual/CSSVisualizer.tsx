@@ -2,20 +2,11 @@ import React, { useEffect, useRef } from 'react';
 import { useLiveAPIContext } from '../../contexts/LiveAPIContext';
 import './css-visualizer.scss';
 
-interface CSSVisualizerProps {
-  opacity?: number;
-}
-
-const CSSVisualizer: React.FC<CSSVisualizerProps> = ({ opacity = 0.2 }) => {
+const CSSVisualizer: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const barsRef = useRef<HTMLDivElement[]>([]);
   const { audioStreamer } = useLiveAPIContext();
   const animationRef = useRef<number>();
-
-  // Log when opacity changes
-  useEffect(() => {
-    console.log(`CSS Visualizer opacity changed to: ${opacity}`);
-  }, [opacity]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -53,22 +44,40 @@ const CSSVisualizer: React.FC<CSSVisualizerProps> = ({ opacity = 0.2 }) => {
     if (!audioStreamer || barsRef.current.length === 0) return;
 
     let isActive = true;
-    const analyser = audioStreamer.context.createAnalyser();
-    analyser.fftSize = 64;
-    const bufferLength = analyser.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
+    let analyser: AnalyserNode;
+    let dataArray: Uint8Array;
 
-    // Connect to audio stream
-    audioStreamer.gainNode.connect(analyser);
+    const connectToAudioStream = () => {
+      try {
+        analyser = audioStreamer.context.createAnalyser();
+        analyser.fftSize = 64;
+        const bufferLength = analyser.frequencyBinCount;
+        dataArray = new Uint8Array(bufferLength);
+
+        // Connect to audio stream
+        audioStreamer.gainNode.connect(analyser);
+        
+        console.log('CSS Visualizer connected to audio stream');
+      } catch (error) {
+        console.error('Error connecting CSS visualizer to audio stream:', error);
+      }
+    };
+
+    const handleGainNodeRecreated = (newGainNode: GainNode) => {
+      console.log('CSS Visualizer reconnecting to new gainNode');
+      
+      // Reconnect to the new gainNode
+      connectToAudioStream();
+    };
 
     const animate = () => {
-      if (!isActive) return;
+      if (!isActive || !analyser || !dataArray) return;
 
       analyser.getByteFrequencyData(dataArray);
       
       // Update bars based on frequency data
       barsRef.current.forEach((bar, index) => {
-        const dataIndex = Math.floor((index / barsRef.current.length) * bufferLength);
+        const dataIndex = Math.floor((index / barsRef.current.length) * dataArray.length);
         const value = dataArray[dataIndex] || 0;
         const height = Math.max(2, (value / 255) * 100);
         bar.style.height = `${height}%`;
@@ -78,15 +87,23 @@ const CSSVisualizer: React.FC<CSSVisualizerProps> = ({ opacity = 0.2 }) => {
       animationRef.current = requestAnimationFrame(animate);
     };
 
+    // Listen for gainNode recreation events
+    audioStreamer.on('gainNodeRecreated', handleGainNodeRecreated);
+
+    connectToAudioStream();
     animate();
 
     return () => {
       isActive = false;
+      audioStreamer.off('gainNodeRecreated', handleGainNodeRecreated);
+      
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
       try {
-        audioStreamer.gainNode.disconnect(analyser);
+        if (analyser) {
+          audioStreamer.gainNode.disconnect(analyser);
+        }
       } catch (e) {
         // Ignore disconnect errors
       }
@@ -98,7 +115,7 @@ const CSSVisualizer: React.FC<CSSVisualizerProps> = ({ opacity = 0.2 }) => {
       ref={containerRef}
       className="css-visualizer-container"
       style={{
-        opacity: opacity,
+        opacity: 0.3,
         position: 'fixed',
         top: 0,
         left: 0,

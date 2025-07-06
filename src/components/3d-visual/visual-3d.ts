@@ -26,20 +26,25 @@ import {vs as sphereVS} from './sphere-shader';
  */
 @customElement('gdm-live-audio-visuals-3d')
 export class GdmLiveAudioVisuals3D extends LitElement {
-  private inputAnalyser!: Analyser;
-  private outputAnalyser!: Analyser;
+  private inputAnalyser!: Analyser | null;
+  private outputAnalyser!: Analyser | null;
   private camera!: THREE.PerspectiveCamera;
   private backdrop!: THREE.Mesh;
   private composer!: EffectComposer;
   private sphere!: THREE.Mesh;
   private prevTime = 0;
   private rotation = new THREE.Vector3(0, 0, 0);
+  private lastConnectionCheck = 0;
 
   private _outputNode!: AudioNode;
 
   @property()
   set outputNode(node: AudioNode) {
     this._outputNode = node;
+    if (this.outputAnalyser) {
+      // Disconnect old analyzer
+      this.outputAnalyser = null;
+    }
     this.outputAnalyser = new Analyser(this._outputNode);
   }
 
@@ -52,11 +57,54 @@ export class GdmLiveAudioVisuals3D extends LitElement {
   @property()
   set inputNode(node: AudioNode) {
     this._inputNode = node;
+    if (this.inputAnalyser) {
+      // Disconnect old analyzer
+      this.inputAnalyser = null;
+    }
     this.inputAnalyser = new Analyser(this._inputNode);
   }
 
   get inputNode() {
     return this._inputNode;
+  }
+
+  private checkAnalyzersConnection() {
+    // Check if analyzers are still working by testing if they can get data
+    if (this.inputAnalyser) {
+      try {
+        this.inputAnalyser.update();
+        // If data is all zeros, the analyzer might be disconnected
+        const data = this.inputAnalyser.data;
+        const hasData = Array.from(data).some(val => val > 0);
+        if (!hasData && this._inputNode) {
+          // Try to recreate the analyzer
+          this.inputAnalyser = new Analyser(this._inputNode);
+        }
+      } catch (error) {
+        console.warn('Input analyzer disconnected, recreating...', error);
+        if (this._inputNode) {
+          this.inputAnalyser = new Analyser(this._inputNode);
+        }
+      }
+    }
+    
+    if (this.outputAnalyser) {
+      try {
+        this.outputAnalyser.update();
+        // If data is all zeros, the analyzer might be disconnected
+        const data = this.outputAnalyser.data;
+        const hasData = Array.from(data).some(val => val > 0);
+        if (!hasData && this._outputNode) {
+          // Try to recreate the analyzer
+          this.outputAnalyser = new Analyser(this._outputNode);
+        }
+      } catch (error) {
+        console.warn('Output analyzer disconnected, recreating...', error);
+        if (this._outputNode) {
+          this.outputAnalyser = new Analyser(this._outputNode);
+        }
+      }
+    }
   }
 
   private canvas!: HTMLCanvasElement;
@@ -214,6 +262,13 @@ export class GdmLiveAudioVisuals3D extends LitElement {
 
   private animation() {
     requestAnimationFrame(() => this.animation());
+
+    // Periodically check if analyzers are still connected (every 2 seconds)
+    const currentTime = performance.now();
+    if (!this.lastConnectionCheck || currentTime - this.lastConnectionCheck > 2000) {
+      this.checkAnalyzersConnection();
+      this.lastConnectionCheck = currentTime;
+    }
 
     // Only update analyzers if they exist
     if (this.inputAnalyser) {

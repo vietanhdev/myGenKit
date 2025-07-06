@@ -19,7 +19,7 @@ import { UserSettings } from '../../lib/user-management';
 import { useUserSession } from '../../hooks/use-user-session';
 import { useVisualizationSettings } from '../../hooks/use-visualization-settings';
 import { PasswordDialog } from './PasswordDialog';
-import VisualizationSettings, { VisualizationConfig } from './VisualizationSettings';
+import VisualizationSettings from './VisualizationSettings';
 import { Modality, LiveConnectConfig, Tool, FunctionDeclaration } from '@google/genai';
 
 interface UserSettingsDialogFullProps {
@@ -41,14 +41,6 @@ const defaultConfig: LiveConnectConfig = {
       },
     },
   },
-};
-
-const defaultVisualizationConfig: VisualizationConfig = {
-  type: '3d-full',
-  intensity: 'medium',
-  opacity: 0.3,
-  color: 'blue',
-  enabled: true,
 };
 
 export const UserSettingsDialogFull: React.FC<UserSettingsDialogFullProps> = ({
@@ -80,23 +72,18 @@ export const UserSettingsDialogFull: React.FC<UserSettingsDialogFullProps> = ({
       setModel(userSession.currentSettings.model || 'models/gemini-2.0-flash-exp');
       setConfig(userSession.currentSettings.config || defaultConfig);
       
-      // Ensure visualization config is always valid
-      const vizConfig = userSession.currentSettings.visualizationConfig;
-      if (vizConfig && typeof vizConfig === 'object') {
-        updateVisualizationConfig({ ...defaultVisualizationConfig, ...vizConfig });
-      } else {
-        updateVisualizationConfig(defaultVisualizationConfig);
-      }
+      // Handle visualization config - let the visualization settings hook handle its own loading
+      // Don't override it here since it has its own migration logic
     } else if (isOpen) {
       // Reset to defaults if no settings
       setApiKey('');
       setModel('models/gemini-2.0-flash-exp');
       setConfig(defaultConfig);
-      updateVisualizationConfig(defaultVisualizationConfig);
+      // Don't reset visualization config - let the hook handle its own defaults
     }
     setError('');
     setHasSavedSuccessfully(false); // Reset on dialog open/close
-  }, [isOpen, userSession.currentSettings, updateVisualizationConfig]);
+  }, [isOpen, userSession.currentSettings]);
 
   // Check for session expiration when dialog opens
   useEffect(() => {
@@ -197,13 +184,7 @@ export const UserSettingsDialogFull: React.FC<UserSettingsDialogFullProps> = ({
           setModel(loadedModel);
           setConfig(loadedConfig);
           
-          // Update visualization config
-          const vizConfig = userSession.currentSettings.visualizationConfig;
-          if (vizConfig && typeof vizConfig === 'object') {
-            updateVisualizationConfig({ ...defaultVisualizationConfig, ...vizConfig });
-          } else {
-            updateVisualizationConfig(defaultVisualizationConfig);
-          }
+          // Don't override visualization config - let the visualization settings hook handle its own loading
           
           // Clear any error messages
           setError('');
