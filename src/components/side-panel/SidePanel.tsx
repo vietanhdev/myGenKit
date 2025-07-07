@@ -37,6 +37,7 @@ export default function SidePanel() {
   const [screenSize, setScreenSize] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
   const loggerRef = useRef<HTMLDivElement>(null);
   const loggerLastHeightRef = useRef<number>(-1);
+  const previousScreenSizeRef = useRef(screenSize);
   const { log, logs } = useLoggerStore();
   const { currentUser, isLoggedIn, logout } = useUserSession();
   
@@ -62,40 +63,51 @@ export default function SidePanel() {
   const [plugins, setPlugins] = useState<PluginDefinition[]>([]);
   const [pluginsInitialized, setPluginsInitialized] = useState(false);
 
-  // Responsive breakpoint detection
+  // Responsive breakpoint detection with debouncing
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    
     const checkScreenSize = () => {
-      const width = window.innerWidth;
-      const previousScreenSize = screenSize;
-      
-      if (width < 768) {
-        setScreenSize('mobile');
-        setIsMobileOverlay(false);
-        // Only set to closed if transitioning TO mobile for the first time
-        if (previousScreenSize !== 'mobile') {
-          setOpen(false);
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        const width = window.innerWidth;
+        const previousScreenSize = previousScreenSizeRef.current;
+        
+        let newScreenSize: 'mobile' | 'tablet' | 'desktop';
+        if (width < 768) {
+          newScreenSize = 'mobile';
+        } else if (width < 1024) {
+          newScreenSize = 'tablet';
+        } else {
+          newScreenSize = 'desktop';
         }
-      } else if (width < 1024) {
-        setScreenSize('tablet');
-        setIsMobileOverlay(false);
-        // Only set to open if transitioning FROM mobile
-        if (previousScreenSize === 'mobile') {
-          setOpen(true);
+        
+        // Only update if screen size actually changed
+        if (newScreenSize !== previousScreenSize) {
+          setScreenSize(newScreenSize);
+          setIsMobileOverlay(false);
+          
+          // Handle state transitions
+          if (newScreenSize === 'mobile' && previousScreenSize !== 'mobile') {
+            setOpen(false);
+          } else if (newScreenSize !== 'mobile' && previousScreenSize === 'mobile') {
+            setOpen(true);
+          }
+          
+          previousScreenSizeRef.current = newScreenSize;
         }
-      } else {
-        setScreenSize('desktop');
-        setIsMobileOverlay(false);
-        // Only set to open if transitioning FROM mobile
-        if (previousScreenSize === 'mobile') {
-          setOpen(true);
-        }
-      }
+      }, 150); // Debounce by 150ms
     };
     
+    // Initial check
     checkScreenSize();
+    
     window.addEventListener('resize', checkScreenSize);
-    return () => window.removeEventListener('resize', checkScreenSize);
-  }, [screenSize]);
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener('resize', checkScreenSize);
+    };
+  }, []); // Remove screenSize dependency to avoid loops
 
   // Ensure activeTab is valid in production environment
   useEffect(() => {
@@ -136,14 +148,18 @@ export default function SidePanel() {
     setSidebarWidth(newWidth);
   }, [isResizing, dragStartX, dragStartWidth, getMaxWidth, screenSize]);
 
-  // Save sidebar width to localStorage and emit events
+  // Save sidebar width to localStorage and emit events with throttling
   useEffect(() => {
-    localStorage.setItem('sidebar-width', sidebarWidth.toString());
+    const timeoutId = setTimeout(() => {
+      localStorage.setItem('sidebar-width', sidebarWidth.toString());
+      
+      // Emit custom event for width changes
+      window.dispatchEvent(new CustomEvent('sidebar-width-change', {
+        detail: { width: sidebarWidth, isOpen: open }
+      }));
+    }, 100); // Throttle localStorage updates
     
-    // Emit custom event for width changes
-    window.dispatchEvent(new CustomEvent('sidebar-width-change', {
-      detail: { width: sidebarWidth, isOpen: open }
-    }));
+    return () => clearTimeout(timeoutId);
   }, [sidebarWidth, open]);
 
   // Handle resize end
@@ -166,17 +182,25 @@ export default function SidePanel() {
     }
   }, [isResizing, handleResizeDrag, handleResizeEnd]);
 
-  // Handle window resize to adjust sidebar constraints
+  // Handle window resize to adjust sidebar constraints with debouncing
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    
     const handleWindowResize = () => {
-      const maxWidth = getMaxWidth();
-      if (sidebarWidth > maxWidth) {
-        setSidebarWidth(maxWidth);
-      }
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        const maxWidth = getMaxWidth();
+        if (sidebarWidth > maxWidth) {
+          setSidebarWidth(maxWidth);
+        }
+      }, 200); // Debounce by 200ms
     };
 
     window.addEventListener('resize', handleWindowResize);
-    return () => window.removeEventListener('resize', handleWindowResize);
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener('resize', handleWindowResize);
+    };
   }, [sidebarWidth, getMaxWidth]);
 
   //scroll the log to the bottom when new logs come in
