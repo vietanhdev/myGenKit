@@ -141,7 +141,7 @@ export default function SidePanel() {
 
   // Handle resize drag
   const handleResizeDrag = useCallback((e: MouseEvent) => {
-    if (!isResizing || screenSize === 'mobile') return;
+    if (!isResizing || screenSize === 'mobile') return;                                     
     
     const deltaX = e.clientX - dragStartX;
     const newWidth = Math.min(Math.max(dragStartWidth + deltaX, MIN_WIDTH), getMaxWidth());
@@ -334,22 +334,25 @@ export default function SidePanel() {
       
       <div 
         className={`
-          h-screen border-r-1 border-divider bg-background flex flex-col relative
+          h-screen flex flex-col relative
           ${screenSize === 'mobile' 
             ? isMobileOverlay 
-              ? 'fixed left-0 top-0 z-50 w-full shadow-2xl transform translate-x-0 transition-transform duration-300 ease-in-out'
-              : 'fixed left-0 top-0 z-50 w-full shadow-2xl transform -translate-x-full transition-transform duration-300 ease-in-out'
+              ? 'fixed inset-0 z-50 w-full shadow-2xl transform translate-x-0 transition-transform duration-300 ease-in-out bg-background'
+              : 'fixed left-0 top-0 z-50 w-full shadow-2xl transform -translate-x-full transition-transform duration-300 ease-in-out bg-background'
             : open 
-              ? "" 
-              : "w-16"
+              ? "border-r-1 border-divider bg-background" 
+              : "w-16 border-r-1 border-divider bg-background"
           }
         `}
         style={{
           width: screenSize === 'mobile' 
-            ? '100%' 
+            ? '100vw' 
             : open 
               ? `${sidebarWidth}px` 
               : '4rem',
+          height: screenSize === 'mobile' ? '100vh' : '100vh',
+          left: screenSize === 'mobile' ? '0' : undefined,
+          top: screenSize === 'mobile' ? '0' : undefined,
           transition: screenSize === 'mobile' 
             ? 'transform 0.3s ease-in-out' 
             : open 
