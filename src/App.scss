@@ -146,6 +146,18 @@ body {
     gap: 1rem;
     max-width: 100%;
     overflow: hidden;
+
+    /* Responsive adjustments for mobile/tablet control tray */
+    @media (max-width: 1023px) {
+      padding-bottom: 100px; /* Space for fixed control tray */
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    @media (max-width: 767px) {
+      padding-bottom: 120px; /* Extra space for mobile control tray */
+      gap: 0.5rem;
+    }
   }
 
   .main-app-area {
@@ -153,6 +165,12 @@ body {
     flex: 1;
     align-items: center;
     justify-content: center;
+
+    /* Responsive adjustments */
+    @media (max-width: 767px) {
+      min-height: 0; /* Allow shrinking on mobile */
+      width: 100%;
+    }
   }
 
   .function-call {
@@ -170,4 +188,15 @@ body {
   max-width: 90%;
   border-radius: 32px;
   max-height: fit-content;
+
+  /* Responsive video sizing */
+  @media (max-width: 767px) {
+    max-width: 95%;
+    border-radius: 24px;
+  }
+
+  @media (min-width: 768px) and (max-width: 1023px) {
+    max-width: 85%;
+    border-radius: 28px;
+  }
 }

@@ -44,6 +44,19 @@
       border: 1px solid var(--Blue-500);
     }
   }
+
+  /* Responsive button sizing */
+  @media (max-width: 767px) {
+    width: 44px;
+    height: 44px;
+    border-radius: 16px;
+  }
+
+  @media (min-width: 1200px) {
+    width: 52px;
+    height: 52px;
+    border-radius: 20px;
+  }
 }
 
 @property --volume {
@@ -88,6 +101,14 @@
     height: calc(100% + var(--volume) * 2);
     border-radius: 24px;
     transition: all 0.02s ease-in-out;
+
+    @media (max-width: 767px) {
+      border-radius: 20px;
+    }
+
+    @media (min-width: 1200px) {
+      border-radius: 28px;
+    }
   }
 }
 
@@ -104,15 +125,36 @@
 }
 
 .control-tray {
-  position: absolute;
-  bottom: 0;
+  position: fixed;
+  bottom: 18px;
   left: 50%;
   transform: translate(-50%, 0);
   display: inline-flex;
   justify-content: center;
   align-items: flex-start;
   gap: 8px;
-  padding-bottom: 18px;
+  z-index: 30;
+
+  /* Responsive positioning and sizing */
+  @media (max-width: 767px) {
+    bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+    gap: 6px;
+    padding: 0 16px;
+    max-width: calc(100vw - 32px);
+    box-sizing: border-box;
+  }
+
+  @media (min-width: 768px) and (max-width: 1023px) {
+    bottom: 20px;
+    gap: 8px;
+  }
+
+  @media (min-width: 1024px) {
+    position: absolute;
+    bottom: 0;
+    padding-bottom: 18px;
+    z-index: 10;
+  }
 
   .disabled .action-button,
   .action-button.disabled {
@@ -133,12 +175,26 @@
       border: 1px solid var(--Neutral-30);
       background: var(--Neutral-5);
       padding: 10px;
+
+      @media (max-width: 767px) {
+        border-radius: 23px;
+        padding: 8px;
+      }
+
+      @media (min-width: 1200px) {
+        border-radius: 31px;
+        padding: 12px;
+      }
     }
 
     .text-indicator {
       font-size: 11px;
       color: var(--Blue-500);
       user-select: none;
+
+      @media (max-width: 767px) {
+        font-size: 10px;
+      }
     }
 
     &:not(.connected) {
@@ -160,6 +216,19 @@
   padding: 10px;
 
   transition: all 0.6s ease-in;
+
+  /* Responsive navigation sizing */
+  @media (max-width: 767px) {
+    border-radius: 23px;
+    gap: 8px;
+    padding: 8px;
+  }
+
+  @media (min-width: 1200px) {
+    border-radius: 31px;
+    gap: 14px;
+    padding: 12px;
+  }
 
   &>* {
     display: flex;
