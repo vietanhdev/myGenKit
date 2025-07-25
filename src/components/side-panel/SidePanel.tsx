@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { RiSidebarFoldLine, RiSidebarUnfoldLine, RiHistoryLine, RiTerminalLine, RiLogoutBoxLine, RiCalendarLine, RiSettingsLine, RiTranslate, RiMenuLine, RiCloseLine } from "react-icons/ri";
+import { RiSidebarFoldLine, RiSidebarUnfoldLine, RiHistoryLine, RiTerminalLine, RiLogoutBoxLine, RiCalendarLine, RiSettingsLine, RiTranslate, RiMenuLine, RiCloseLine, RiUserSearchLine } from "react-icons/ri";
 import { 
   Select, 
   SelectItem, 
@@ -22,6 +22,7 @@ import Calendar from "./Calendar";
 import { UserSettingsDialogFull } from "../settings-dialog/UserSettingsDialogFull";
 import { pluginRegistry } from "../../lib/plugin-registry";
 import { languageLearningPlugin } from "../../plugins/language-learning";
+import { interviewPlugin } from "../../plugins/interview";
 import { PluginDefinition } from "../../types";
 
 const filterOptions = [
@@ -240,16 +241,26 @@ export default function SidePanel() {
     if (isLoggedIn && currentUser && !pluginsInitialized) {
       const initPlugins = async () => {
         try {
-          // Register the Language Learning plugin
+          // Register plugins
           pluginRegistry.register(languageLearningPlugin);
+          pluginRegistry.register(interviewPlugin);
           
-          // Initialize plugin with context
+          // Initialize plugins with context
           const sessionPassword = localStorage.getItem('genkit_session_password');
           if (sessionPassword) {
             const sessionData = JSON.parse(sessionPassword);
             
             await pluginRegistry.initializePlugin(
               'language-learning',
+              currentUser.id,
+              sessionData.password,
+              addMessageToCurrentConversation,
+              createNewConversation,
+              currentConversation
+            );
+            
+            await pluginRegistry.initializePlugin(
+              'interview',
               currentUser.id,
               sessionData.password,
               addMessageToCurrentConversation,
@@ -485,17 +496,30 @@ export default function SidePanel() {
                 }
               />
               {/* Plugin Tabs */}
-              {plugins.map((plugin) => (
-                <Tab
-                  key={plugin.id}
-                  title={
-                    <div className="flex items-center gap-2">
-                      <RiTranslate size={16} />
-                      <span>{plugin.name}</span>
-                    </div>
+              {plugins.map((plugin) => {
+                // Simple icon mapping for plugins
+                const getPluginIcon = (iconName?: string) => {
+                  switch (iconName) {
+                    case 'RiUserSearchLine':
+                      return <RiUserSearchLine size={16} />;
+                    case 'RiTranslate':
+                    default:
+                      return <RiTranslate size={16} />;
                   }
-                />
-              ))}
+                };
+                
+                return (
+                  <Tab
+                    key={plugin.id}
+                    title={
+                      <div className="flex items-center gap-2">
+                        {getPluginIcon(plugin.icon)}
+                        <span>{plugin.name}</span>
+                      </div>
+                    }
+                  />
+                );
+              })}
               {process.env.NODE_ENV === 'development' && (
                 <Tab
                   key="logs"
