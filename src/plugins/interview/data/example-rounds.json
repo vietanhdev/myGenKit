@@ -1,0 +1,68 @@
+[
+  {
+    "id": "07f6f572-b371-40f7-9aea-90064ebcde42",
+    "name": "Phone Screening",
+    "description": "Initial phone screening to assess basic qualifications and interest",
+    "duration": 30,
+    "questionCategories": ["experience", "culture-fit"],
+    "difficulty": "entry",
+    "questionCount": 5,
+    "interviewerRole": "HR Recruiter",
+    "usageCount": 0,
+    "focusType": "cv",
+    "position": "Software Engineer",
+    "jobDescription": "We are looking for a skilled Software Engineer to join our growing team. You will be responsible for developing scalable web applications, collaborating with cross-functional teams, and contributing to our technical architecture decisions."
+  },
+  {
+    "id": "c0631c5a-08da-4b38-8107-c6f572c78ca8",
+    "name": "Technical Interview",
+    "description": "In-depth technical assessment focusing on coding and problem-solving skills",
+    "duration": 60,
+    "questionCategories": ["technical", "problem-solving"],
+    "difficulty": "mid",
+    "questionCount": 8,
+    "interviewerRole": "Senior Software Engineer",
+    "usageCount": 0,
+    "focusType": "techniques",
+    "techniques": ["JavaScript", "React", "Node.js", "Algorithms", "Data Structures"],
+    "position": "Frontend Engineer",
+    "jobDescription": "Senior Frontend Engineer responsible for building responsive, high-performance web applications using React, TypeScript, and modern frontend technologies. Must have experience with state management, testing, and performance optimization."
+  },
+  {
+    "id": "25288433-98df-4840-a4be-b824af56394d",
+    "name": "Behavioral Interview",
+    "description": "Assessment of soft skills, teamwork, and cultural fit",
+    "duration": 45,
+    "questionCategories": ["behavioral", "situational", "culture-fit"],
+    "difficulty": "mid",
+    "questionCount": 6,
+    "interviewerRole": "Team Lead",
+    "usageCount": 0,
+    "focusType": "cv"
+  },
+  {
+    "id": "9996d529-e87a-4669-8980-e78187c167e6",
+    "name": "System Design",
+    "description": "High-level system design discussion for senior positions",
+    "duration": 90,
+    "questionCategories": ["technical", "problem-solving"],
+    "difficulty": "senior",
+    "questionCount": 3,
+    "interviewerRole": "Principal Engineer",
+    "usageCount": 0,
+    "focusType": "domain",
+    "domains": ["System Architecture", "Scalability", "Microservices", "Cloud Computing"]
+  },
+  {
+    "id": "c62c8855-1e55-4768-901d-5b735e565920",
+    "name": "Executive Interview",
+    "description": "Final round with leadership focusing on vision and strategic thinking",
+    "duration": 60,
+    "questionCategories": ["leadership", "experience", "culture-fit"],
+    "difficulty": "executive",
+    "questionCount": 5,
+    "interviewerRole": "VP of Engineering",
+    "usageCount": 0,
+    "focusType": "cv"
+  }
+] 
