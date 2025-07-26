@@ -137,7 +137,7 @@ const handleAddQuestion = async (args: any, context: PluginContext): Promise<Plu
     const questions = await context.storage.get('questions') || [];
     
     const newQuestion = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       question: args.question,
       category: args.category,
       difficulty: args.difficulty,
@@ -160,9 +160,10 @@ const handleAddQuestion = async (args: any, context: PluginContext): Promise<Plu
       }
     };
   } catch (error) {
+    console.error('Error in handleAddQuestion:', error);
     return {
       success: false,
-      error: `Failed to add question: ${error}`
+      error: 'An unexpected error occurred while adding the question.'
     };
   }
 };
@@ -191,9 +192,10 @@ const handleRemoveQuestion = async (args: any, context: PluginContext): Promise<
       }
     };
   } catch (error) {
+    console.error('Error removing question:', error);
     return {
       success: false,
-      error: `Failed to remove question: ${error}`
+      error: 'Failed to remove question due to an unexpected error.'
     };
   }
 };
@@ -239,9 +241,10 @@ const handleQueryQuestions = async (args: any, context: PluginContext): Promise<
       }
     };
   } catch (error) {
+    console.error('Error querying questions:', error);
     return {
       success: false,
-      error: `Failed to query questions: ${error}`
+      error: 'Failed to query questions. Please try again later.'
     };
   }
 };
@@ -251,7 +254,7 @@ const handleCreateInterviewRound = async (args: any, context: PluginContext): Pr
     const rounds = await context.storage.get('interviewRounds') || [];
     
     const newRound = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       name: args.name,
       description: args.description || '',
       duration: args.duration,
@@ -274,9 +277,10 @@ const handleCreateInterviewRound = async (args: any, context: PluginContext): Pr
       }
     };
   } catch (error) {
+    console.error('Error creating interview round:', error);
     return {
       success: false,
-      error: `Failed to create interview round: ${error}`
+      error: 'Failed to create interview round due to an internal error. Please try again later.'
     };
   }
 };
@@ -288,7 +292,7 @@ const createExampleQuestions = async (context: PluginContext) => {
   const exampleQuestions = [
     // Technical Questions
     {
-      id: 'tech-1',
+      id: '6a57e3f6-7bad-473c-a245-8c1f2be7e617',
       question: 'Explain the difference between var, let, and const in JavaScript.',
       category: 'technical',
       difficulty: 'entry',
@@ -300,7 +304,7 @@ const createExampleQuestions = async (context: PluginContext) => {
       usageCount: 0
     },
     {
-      id: 'tech-2',
+      id: '9028edf3-87e4-47d3-b9b8-06c4d0b5c452',
       question: 'How would you optimize a slow database query?',
       category: 'technical',
       difficulty: 'mid',
@@ -312,7 +316,7 @@ const createExampleQuestions = async (context: PluginContext) => {
       usageCount: 0
     },
     {
-      id: 'tech-3',
+      id: 'd3c80d6b-fb23-4324-b186-e1e2df0477ee',
       question: 'Design a scalable system for a social media feed.',
       category: 'technical',
       difficulty: 'senior',
@@ -326,7 +330,7 @@ const createExampleQuestions = async (context: PluginContext) => {
 
     // Behavioral Questions
     {
-      id: 'behavioral-1',
+      id: 'c14a7912-fcf0-4b54-a6bd-f43d2d4a407f',
       question: 'Tell me about a time when you had to work with a difficult team member.',
       category: 'behavioral',
       difficulty: 'entry',
@@ -338,7 +342,7 @@ const createExampleQuestions = async (context: PluginContext) => {
       usageCount: 0
     },
     {
-      id: 'behavioral-2',
+      id: 'bed03464-7efd-44cc-ae05-0dc43c1b51f6',
       question: 'Describe a project where you had to learn a new technology quickly.',
       category: 'behavioral',
       difficulty: 'mid',
@@ -350,7 +354,7 @@ const createExampleQuestions = async (context: PluginContext) => {
       usageCount: 0
     },
     {
-      id: 'behavioral-3',
+      id: '5d98aa37-1275-439b-a972-9cae73f44614',
       question: 'Tell me about a time when you had to make a decision with incomplete information.',
       category: 'behavioral',
       difficulty: 'senior',
@@ -364,7 +368,7 @@ const createExampleQuestions = async (context: PluginContext) => {
 
     // Situational Questions
     {
-      id: 'situational-1',
+      id: '43368be2-a4d9-43bf-b8e7-40d5682d304a',
       question: 'How would you handle a situation where your project deadline is moved up by two weeks?',
       category: 'situational',
       difficulty: 'entry',
@@ -376,7 +380,7 @@ const createExampleQuestions = async (context: PluginContext) => {
       usageCount: 0
     },
     {
-      id: 'situational-2',
+      id: '7a43ede9-d466-44f2-9b00-ac124ee4bcc4',
       question: 'What would you do if you discovered a security vulnerability in production?',
       category: 'situational',
       difficulty: 'mid',
@@ -390,7 +394,7 @@ const createExampleQuestions = async (context: PluginContext) => {
 
     // Problem-Solving Questions
     {
-      id: 'problem-1',
+      id: '1c11efa6-9301-47a2-8fb1-8d4bb492602e',
       question: 'How many tennis balls can fit in a school bus?',
       category: 'problem-solving',
       difficulty: 'entry',
@@ -402,7 +406,7 @@ const createExampleQuestions = async (context: PluginContext) => {
       usageCount: 0
     },
     {
-      id: 'problem-2',
+      id: 'd26169ef-d117-42eb-8684-8cbb3bd6af06',
       question: 'A user reports that our website is slow. How would you investigate?',
       category: 'problem-solving',
       difficulty: 'mid',
@@ -416,7 +420,7 @@ const createExampleQuestions = async (context: PluginContext) => {
 
     // Experience Questions
     {
-      id: 'experience-1',
+      id: 'babd7fbf-6dff-485c-a053-232a9e014f3e',
       question: 'What was the most challenging project you\'ve worked on?',
       category: 'experience',
       difficulty: 'entry',
@@ -482,7 +486,7 @@ const createExampleRounds = async (context: PluginContext) => {
   
   const exampleRounds = [
     {
-      id: 'round-1',
+      id: '07f6f572-b371-40f7-9aea-90064ebcde42',
       name: 'Phone Screening',
       description: 'Initial phone screening to assess basic qualifications and interest',
       duration: 30,
@@ -497,7 +501,7 @@ const createExampleRounds = async (context: PluginContext) => {
       jobDescription: 'We are looking for a skilled Software Engineer to join our growing team. You will be responsible for developing scalable web applications, collaborating with cross-functional teams, and contributing to our technical architecture decisions.'
     },
     {
-      id: 'round-2',
+      id: 'c0631c5a-08da-4b38-8107-c6f572c78ca8',
       name: 'Technical Interview',
       description: 'In-depth technical assessment focusing on coding and problem-solving skills',
       duration: 60,
@@ -513,7 +517,7 @@ const createExampleRounds = async (context: PluginContext) => {
       jobDescription: 'Senior Frontend Engineer responsible for building responsive, high-performance web applications using React, TypeScript, and modern frontend technologies. Must have experience with state management, testing, and performance optimization.'
     },
     {
-      id: 'round-3',
+      id: '25288433-98df-4840-a4be-b824af56394d',
       name: 'Behavioral Interview',
       description: 'Assessment of soft skills, teamwork, and cultural fit',
       duration: 45,
@@ -526,7 +530,7 @@ const createExampleRounds = async (context: PluginContext) => {
       focusType: 'cv' as const
     },
     {
-      id: 'round-4',
+      id: '9996d529-e87a-4669-8980-e78187c167e6',
       name: 'System Design',
       description: 'High-level system design discussion for senior positions',
       duration: 90,
@@ -540,7 +544,7 @@ const createExampleRounds = async (context: PluginContext) => {
       domains: ['System Architecture', 'Scalability', 'Microservices', 'Cloud Computing']
     },
     {
-      id: 'round-5',
+      id: 'c62c8855-1e55-4768-901d-5b735e565920',
       name: 'Executive Interview',
       description: 'Final round with leadership focusing on vision and strategic thinking',
       duration: 60,

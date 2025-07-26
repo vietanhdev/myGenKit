@@ -265,7 +265,7 @@ export const InterviewApp: React.FC<InterviewAppProps> = ({ isActive, context })
     if (!context) return;
     
     const question: InterviewQuestion = {
-      id: editingQuestion?.id || Date.now().toString(),
+      id: editingQuestion?.id || crypto.randomUUID(),
       question: newQuestion.question,
       category: newQuestion.category as any,
       difficulty: newQuestion.difficulty as any,
@@ -322,7 +322,7 @@ export const InterviewApp: React.FC<InterviewAppProps> = ({ isActive, context })
     if (!context) return;
     
     const round: InterviewRound = {
-      id: editingRound?.id || Date.now().toString(),
+      id: editingRound?.id || crypto.randomUUID(),
       name: newRound.name,
       description: newRound.description,
       duration: newRound.duration,
@@ -407,7 +407,7 @@ export const InterviewApp: React.FC<InterviewAppProps> = ({ isActive, context })
       
       // Create interview session
       const session: InterviewSession = {
-        id: Date.now().toString(),
+        id: crypto.randomUUID(),
         roundId: round.id,
         startTime: new Date(),
         questionsAsked: [],
