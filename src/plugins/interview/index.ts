@@ -492,7 +492,9 @@ const createExampleRounds = async (context: PluginContext) => {
       interviewerRole: 'HR Recruiter',
       dateCreated: new Date(),
       usageCount: 0,
-      focusType: 'cv' as const
+      focusType: 'cv' as const,
+      position: 'Software Engineer',
+      jobDescription: 'We are looking for a skilled Software Engineer to join our growing team. You will be responsible for developing scalable web applications, collaborating with cross-functional teams, and contributing to our technical architecture decisions.'
     },
     {
       id: 'round-2',
@@ -506,7 +508,9 @@ const createExampleRounds = async (context: PluginContext) => {
       dateCreated: new Date(),
       usageCount: 0,
       focusType: 'techniques' as const,
-      techniques: ['JavaScript', 'React', 'Node.js', 'Algorithms', 'Data Structures']
+      techniques: ['JavaScript', 'React', 'Node.js', 'Algorithms', 'Data Structures'],
+      position: 'Frontend Engineer',
+      jobDescription: 'Senior Frontend Engineer responsible for building responsive, high-performance web applications using React, TypeScript, and modern frontend technologies. Must have experience with state management, testing, and performance optimization.'
     },
     {
       id: 'round-3',

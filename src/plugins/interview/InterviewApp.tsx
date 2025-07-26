@@ -70,6 +70,9 @@ interface InterviewRound {
   cvContent?: string; // For CV-based interviews
   domains?: string[]; // For domain-based interviews
   techniques?: string[]; // For techniques-based interviews
+  // Position and job description
+  position?: string; // Target position (e.g., "AI Engineer", "Backend Engineer")
+  jobDescription?: string; // Job description details
 }
 
 interface InterviewSession {
@@ -160,6 +163,8 @@ export const InterviewApp: React.FC<InterviewAppProps> = ({ isActive, context })
     cvContent: string;
     domains: string;
     techniques: string;
+    position: string;
+    jobDescription: string;
   }>({
     name: '',
     description: '',
@@ -171,7 +176,9 @@ export const InterviewApp: React.FC<InterviewAppProps> = ({ isActive, context })
     focusType: 'cv',
     cvContent: '',
     domains: '',
-    techniques: ''
+    techniques: '',
+    position: '',
+    jobDescription: ''
   });
 
   const loadQuestions = useCallback(async () => {
@@ -328,7 +335,9 @@ export const InterviewApp: React.FC<InterviewAppProps> = ({ isActive, context })
       focusType: newRound.focusType as any,
       cvContent: newRound.cvContent,
       domains: newRound.domains ? newRound.domains.split(',').map(d => d.trim()).filter(d => d) : undefined,
-      techniques: newRound.techniques ? newRound.techniques.split(',').map(t => t.trim()).filter(t => t) : undefined
+      techniques: newRound.techniques ? newRound.techniques.split(',').map(t => t.trim()).filter(t => t) : undefined,
+      position: newRound.position || undefined,
+      jobDescription: newRound.jobDescription || undefined
     };
     
     const updatedRounds = editingRound 
@@ -349,7 +358,9 @@ export const InterviewApp: React.FC<InterviewAppProps> = ({ isActive, context })
       focusType: 'cv',
       cvContent: '',
       domains: '',
-      techniques: ''
+      techniques: '',
+      position: '',
+      jobDescription: ''
     });
     setEditingRound(null);
     onAddRoundClose();
@@ -375,7 +386,9 @@ export const InterviewApp: React.FC<InterviewAppProps> = ({ isActive, context })
       focusType: round.focusType,
       cvContent: round.cvContent || '',
       domains: round.domains?.join(', ') || '',
-      techniques: round.techniques?.join(', ') || ''
+      techniques: round.techniques?.join(', ') || '',
+      position: round.position || '',
+      jobDescription: round.jobDescription || ''
     });
     onAddRoundOpen();
   };
@@ -426,6 +439,26 @@ Technical Focus Areas: ${round.techniques.join(', ')}
 IMPORTANT: Deep-dive into the candidate's expertise with these specific technologies and techniques. Ask about implementation details, best practices, performance considerations, and real-world usage scenarios.`;
       }
 
+      // Add position and job description information
+      let positionSection = '';
+      if (round.position) {
+        positionSection = `
+Target Position: ${round.position}`;
+        
+        if (round.jobDescription) {
+          positionSection += `
+
+Job Description:
+${round.jobDescription}
+
+IMPORTANT: Tailor your questions to assess the candidate's fit for this specific role. Focus on the skills, experience, and qualifications mentioned in the job description. Ask about their experience with similar responsibilities and how they would approach the challenges described in the JD.`;
+        } else {
+          positionSection += `
+
+IMPORTANT: Focus your questions on skills and experience relevant to the ${round.position} role. Ask about technical competencies, relevant experience, and problem-solving approaches typical for this position.`;
+        }
+      }
+
       const systemPrompt = `You are conducting a ${round.name} interview round. 
 
 Round Details:
@@ -435,7 +468,7 @@ Round Details:
 - Difficulty Level: ${DIFFICULTY_LABELS[round.difficulty]}
 - Target Questions: ${round.questionCount}
 
-Description: ${round.description}${focusSection}
+Description: ${round.description}${focusSection}${positionSection}
 
 Interview Instructions:
 1. Start by introducing yourself as the ${round.interviewerRole}
@@ -1003,6 +1036,30 @@ Begin the interview now by introducing yourself and setting expectations.`;
                 placeholder="e.g., Senior Software Engineer, HR Manager"
                 required
               />
+
+              {/* Position and Job Description */}
+              <div className="space-y-4 p-4 bg-default-50 rounded-lg">
+                <div className="text-sm font-medium">Position Information</div>
+                
+                <Input
+                  label="Target Position (optional)"
+                  value={newRound.position}
+                  onChange={(e) => setNewRound(prev => ({ ...prev, position: e.target.value }))}
+                  placeholder="e.g., AI Engineer, Backend Engineer, Full Stack Developer"
+                />
+                
+                <Textarea
+                  label="Job Description (optional)"
+                  value={newRound.jobDescription}
+                  onChange={(e) => setNewRound(prev => ({ ...prev, jobDescription: e.target.value }))}
+                  placeholder="Paste the job description here to make questions more targeted to the role requirements..."
+                  minRows={4}
+                  maxRows={8}
+                />
+                <p className="text-xs text-default-500">
+                  Adding a job description will make the AI tailor questions specifically to assess fit for this role and its requirements.
+                </p>
+              </div>
               
               <div>
                 <label className="text-sm font-medium mb-2 block">Question Categories</label>
