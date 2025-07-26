@@ -287,282 +287,40 @@ const handleCreateInterviewRound = async (args: any, context: PluginContext): Pr
 
 // Helper function to create example questions
 const createExampleQuestions = async (context: PluginContext) => {
-  console.log('Creating example interview questions...');
-  
-  const exampleQuestions = [
-    // Technical Questions
-    {
-      id: '6a57e3f6-7bad-473c-a245-8c1f2be7e617',
-      question: 'Explain the difference between var, let, and const in JavaScript.',
-      category: 'technical',
-      difficulty: 'entry',
-      department: 'Software Engineering',
-      tags: ['javascript', 'variables', 'fundamentals'],
-      followUp: 'Can you give examples of when you would use each one?',
-      idealAnswer: 'var is function-scoped and can be redeclared, let is block-scoped and can be reassigned, const is block-scoped and cannot be reassigned.',
-      dateAdded: new Date(),
-      usageCount: 0
-    },
-    {
-      id: '9028edf3-87e4-47d3-b9b8-06c4d0b5c452',
-      question: 'How would you optimize a slow database query?',
-      category: 'technical',
-      difficulty: 'mid',
-      department: 'Software Engineering',
-      tags: ['database', 'optimization', 'performance'],
-      followUp: 'What tools would you use to identify the bottleneck?',
-      idealAnswer: 'Add indexes, analyze query execution plan, optimize joins, consider query rewriting, check for N+1 problems.',
-      dateAdded: new Date(),
-      usageCount: 0
-    },
-    {
-      id: 'd3c80d6b-fb23-4324-b186-e1e2df0477ee',
-      question: 'Design a scalable system for a social media feed.',
-      category: 'technical',
-      difficulty: 'senior',
-      department: 'Software Engineering',
-      tags: ['system-design', 'scalability', 'architecture'],
-      followUp: 'How would you handle millions of users?',
-      idealAnswer: 'Discuss microservices, caching strategies, database sharding, load balancing, CDN usage.',
-      dateAdded: new Date(),
-      usageCount: 0
-    },
-
-    // Behavioral Questions
-    {
-      id: 'c14a7912-fcf0-4b54-a6bd-f43d2d4a407f',
-      question: 'Tell me about a time when you had to work with a difficult team member.',
-      category: 'behavioral',
-      difficulty: 'entry',
-      department: 'General',
-      tags: ['teamwork', 'conflict-resolution', 'communication'],
-      followUp: 'What did you learn from that experience?',
-      idealAnswer: 'Use STAR method: Situation, Task, Action, Result. Focus on communication and problem-solving.',
-      dateAdded: new Date(),
-      usageCount: 0
-    },
-    {
-      id: 'bed03464-7efd-44cc-ae05-0dc43c1b51f6',
-      question: 'Describe a project where you had to learn a new technology quickly.',
-      category: 'behavioral',
-      difficulty: 'mid',
-      department: 'Software Engineering',
-      tags: ['learning', 'adaptability', 'technology'],
-      followUp: 'How do you approach learning new technologies?',
-      idealAnswer: 'Show learning methodology, resourcefulness, and ability to apply new knowledge effectively.',
-      dateAdded: new Date(),
-      usageCount: 0
-    },
-    {
-      id: '5d98aa37-1275-439b-a972-9cae73f44614',
-      question: 'Tell me about a time when you had to make a decision with incomplete information.',
-      category: 'behavioral',
-      difficulty: 'senior',
-      department: 'Management',
-      tags: ['decision-making', 'leadership', 'uncertainty'],
-      followUp: 'How did you mitigate the risks?',
-      idealAnswer: 'Demonstrate analytical thinking, risk assessment, and ability to act decisively under pressure.',
-      dateAdded: new Date(),
-      usageCount: 0
-    },
-
-    // Situational Questions
-    {
-      id: '43368be2-a4d9-43bf-b8e7-40d5682d304a',
-      question: 'How would you handle a situation where your project deadline is moved up by two weeks?',
-      category: 'situational',
-      difficulty: 'entry',
-      department: 'General',
-      tags: ['time-management', 'pressure', 'prioritization'],
-      followUp: 'What if you had to cut scope?',
-      idealAnswer: 'Assess current progress, prioritize features, communicate with stakeholders, consider team resources.',
-      dateAdded: new Date(),
-      usageCount: 0
-    },
-    {
-      id: '7a43ede9-d466-44f2-9b00-ac124ee4bcc4',
-      question: 'What would you do if you discovered a security vulnerability in production?',
-      category: 'situational',
-      difficulty: 'mid',
-      department: 'Software Engineering',
-      tags: ['security', 'incident-response', 'communication'],
-      followUp: 'How would you prevent this in the future?',
-      idealAnswer: 'Immediate containment, stakeholder notification, root cause analysis, patch deployment, post-mortem.',
-      dateAdded: new Date(),
-      usageCount: 0
-    },
-
-    // Problem-Solving Questions
-    {
-      id: '1c11efa6-9301-47a2-8fb1-8d4bb492602e',
-      question: 'How many tennis balls can fit in a school bus?',
-      category: 'problem-solving',
-      difficulty: 'entry',
-      department: 'General',
-      tags: ['estimation', 'analytical-thinking', 'creativity'],
-      followUp: 'Walk me through your calculation.',
-      idealAnswer: 'Break down the problem, estimate dimensions, show mathematical reasoning, state assumptions.',
-      dateAdded: new Date(),
-      usageCount: 0
-    },
-    {
-      id: 'd26169ef-d117-42eb-8684-8cbb3bd6af06',
-      question: 'A user reports that our website is slow. How would you investigate?',
-      category: 'problem-solving',
-      difficulty: 'mid',
-      department: 'Software Engineering',
-      tags: ['debugging', 'performance', 'systematic-approach'],
-      followUp: 'What metrics would you look at first?',
-      idealAnswer: 'Systematic approach: reproduce issue, check metrics, analyze network/server/database performance.',
-      dateAdded: new Date(),
-      usageCount: 0
-    },
-
-    // Experience Questions
-    {
-      id: 'babd7fbf-6dff-485c-a053-232a9e014f3e',
-      question: 'What was the most challenging project you\'ve worked on?',
-      category: 'experience',
-      difficulty: 'entry',
-      department: 'General',
-      tags: ['projects', 'challenges', 'growth'],
-      followUp: 'What made it challenging?',
-      idealAnswer: 'Describe specific project, challenges faced, solutions implemented, lessons learned.',
-      dateAdded: new Date(),
-      usageCount: 0
-    },
-    {
-      id: 'experience-2',
-      question: 'Describe your experience with agile development methodologies.',
-      category: 'experience',
-      difficulty: 'mid',
-      department: 'Software Engineering',
-      tags: ['agile', 'methodology', 'process'],
-      followUp: 'What worked well and what didn\'t?',
-      idealAnswer: 'Specific experience with Scrum/Kanban, ceremonies, benefits and challenges encountered.',
-      dateAdded: new Date(),
-      usageCount: 0
-    },
-
-    // Culture Fit Questions
-    {
-      id: 'culture-1',
-      question: 'What motivates you in your work?',
-      category: 'culture-fit',
-      difficulty: 'entry',
-      department: 'General',
-      tags: ['motivation', 'values', 'culture'],
-      followUp: 'How do you stay motivated during difficult times?',
-      idealAnswer: 'Authentic response showing alignment with company values and personal drive.',
-      dateAdded: new Date(),
-      usageCount: 0
-    },
-    {
-      id: 'culture-2',
-      question: 'How do you handle feedback and criticism?',
-      category: 'culture-fit',
-      difficulty: 'mid',
-      department: 'General',
-      tags: ['feedback', 'growth-mindset', 'resilience'],
-      followUp: 'Can you give an example?',
-      idealAnswer: 'Show openness to feedback, growth mindset, and ability to act on constructive criticism.',
-      dateAdded: new Date(),
-      usageCount: 0
-    }
-  ];
+  console.log('Loading example interview questions from JSON...');
   
   try {
+    // Import the questions from JSON file
+    const questionsData = await import('./data/example-questions.json');
+    const exampleQuestions = questionsData.default.map((question: any) => ({
+      ...question,
+      dateAdded: new Date()
+    }));
+    
     await context.storage.set('questions', exampleQuestions);
-    console.log(`Successfully created ${exampleQuestions.length} example questions`);
+    console.log(`Successfully loaded ${exampleQuestions.length} example questions from JSON`);
   } catch (error) {
-    console.error('Failed to create example questions:', error);
+    console.error('Failed to load example questions from JSON:', error);
     throw error;
   }
 };
 
 // Helper function to create example interview rounds
 const createExampleRounds = async (context: PluginContext) => {
-  console.log('Creating example interview rounds...');
-  
-  const exampleRounds = [
-    {
-      id: '07f6f572-b371-40f7-9aea-90064ebcde42',
-      name: 'Phone Screening',
-      description: 'Initial phone screening to assess basic qualifications and interest',
-      duration: 30,
-      questionCategories: ['experience', 'culture-fit'],
-      difficulty: 'entry',
-      questionCount: 5,
-      interviewerRole: 'HR Recruiter',
-      dateCreated: new Date(),
-      usageCount: 0,
-      focusType: 'cv' as const,
-      position: 'Software Engineer',
-      jobDescription: 'We are looking for a skilled Software Engineer to join our growing team. You will be responsible for developing scalable web applications, collaborating with cross-functional teams, and contributing to our technical architecture decisions.'
-    },
-    {
-      id: 'c0631c5a-08da-4b38-8107-c6f572c78ca8',
-      name: 'Technical Interview',
-      description: 'In-depth technical assessment focusing on coding and problem-solving skills',
-      duration: 60,
-      questionCategories: ['technical', 'problem-solving'],
-      difficulty: 'mid',
-      questionCount: 8,
-      interviewerRole: 'Senior Software Engineer',
-      dateCreated: new Date(),
-      usageCount: 0,
-      focusType: 'techniques' as const,
-      techniques: ['JavaScript', 'React', 'Node.js', 'Algorithms', 'Data Structures'],
-      position: 'Frontend Engineer',
-      jobDescription: 'Senior Frontend Engineer responsible for building responsive, high-performance web applications using React, TypeScript, and modern frontend technologies. Must have experience with state management, testing, and performance optimization.'
-    },
-    {
-      id: '25288433-98df-4840-a4be-b824af56394d',
-      name: 'Behavioral Interview',
-      description: 'Assessment of soft skills, teamwork, and cultural fit',
-      duration: 45,
-      questionCategories: ['behavioral', 'situational', 'culture-fit'],
-      difficulty: 'mid',
-      questionCount: 6,
-      interviewerRole: 'Team Lead',
-      dateCreated: new Date(),
-      usageCount: 0,
-      focusType: 'cv' as const
-    },
-    {
-      id: '9996d529-e87a-4669-8980-e78187c167e6',
-      name: 'System Design',
-      description: 'High-level system design discussion for senior positions',
-      duration: 90,
-      questionCategories: ['technical', 'problem-solving'],
-      difficulty: 'senior',
-      questionCount: 3,
-      interviewerRole: 'Principal Engineer',
-      dateCreated: new Date(),
-      usageCount: 0,
-      focusType: 'domain' as const,
-      domains: ['System Architecture', 'Scalability', 'Microservices', 'Cloud Computing']
-    },
-    {
-      id: 'c62c8855-1e55-4768-901d-5b735e565920',
-      name: 'Executive Interview',
-      description: 'Final round with leadership focusing on vision and strategic thinking',
-      duration: 60,
-      questionCategories: ['leadership', 'experience', 'culture-fit'],
-      difficulty: 'executive',
-      questionCount: 5,
-      interviewerRole: 'VP of Engineering',
-      dateCreated: new Date(),
-      usageCount: 0,
-      focusType: 'cv' as const
-    }
-  ];
+  console.log('Loading example interview rounds from JSON...');
   
   try {
+    // Import the rounds from JSON file
+    const roundsData = await import('./data/example-rounds.json');
+    const exampleRounds = roundsData.default.map((round: any) => ({
+      ...round,
+      dateCreated: new Date()
+    }));
+    
     await context.storage.set('interviewRounds', exampleRounds);
-    console.log(`Successfully created ${exampleRounds.length} example interview rounds`);
+    console.log(`Successfully loaded ${exampleRounds.length} example interview rounds from JSON`);
   } catch (error) {
-    console.error('Failed to create example interview rounds:', error);
+    console.error('Failed to load example interview rounds from JSON:', error);
     throw error;
   }
 };
